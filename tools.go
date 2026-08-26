@@ -109,7 +109,8 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 		"snapshot": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
 				boxes := argBool(args, "boxes", true)
-				yamlText, jsonTree, boxMap, err := s.ariaSnapshot(sessionName, boxes)
+				depth := argInt(args, "depth", 0)
+				yamlText, jsonTree, boxMap, err := s.ariaSnapshot(sessionName, boxes, depth)
 				if err != nil {
 					return "", nil, err
 				}
@@ -118,17 +119,14 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 		},
 		"screenshot": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
-				typ := argString(args, "type")
-				if typ == "" {
-					typ = "png"
-				}
 				element := argString(args, "element")
-				data, err := s.screenshotElement(sessionName, element)
+				fullPage := argBool(args, "fullPage", false)
+				data, err := s.screenshotElement(sessionName, element, fullPage)
 				if err != nil {
 					return "", nil, err
 				}
-				content := jsonString(map[string]any{"screenshot": "data:image/" + typ + ";base64," + data})
-				return content, map[string]any{"type": typ, "bytes": len(data) * 3 / 4}, nil
+				content := jsonString(map[string]any{"screenshot": "data:image/png;base64," + data})
+				return content, map[string]any{"type": "png", "bytes": len(data) * 3 / 4}, nil
 			},
 		},
 		"click": {
@@ -291,8 +289,22 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 		"drop": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
 				element := argString(args, "element")
+				if element == "" {
+					return "", nil, fmt.Errorf("drop requires element")
+				}
 				files := argStringSlice(args, "paths")
-				if err := s.setFiles(sessionName, element, files); err != nil {
+				data := map[string]string{}
+				if dm, ok := args["data"].(map[string]any); ok {
+					for k, v := range dm {
+						if s, ok := v.(string); ok {
+							data[k] = s
+						}
+					}
+				}
+				if len(files) == 0 && len(data) == 0 {
+					return "", nil, fmt.Errorf("drop requires paths or data")
+				}
+				if err := s.dropData(sessionName, element, files, data); err != nil {
 					return "", nil, err
 				}
 				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
@@ -312,7 +324,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
 				text := strings.ToLower(argString(args, "text"))
 				regex := argString(args, "regex")
-				yamlText, _, _, err := s.ariaSnapshot(sessionName, false)
+				yamlText, _, _, err := s.ariaSnapshot(sessionName, false, 0)
 				if err != nil {
 					return "", nil, err
 				}
@@ -388,17 +400,18 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 				if text == "" {
 					return "", nil, fmt.Errorf("缺少 'text' 参数")
 				}
-				deadline := time.Now().Add(15 * time.Second)
-				ok := false
-				for time.Now().Before(deadline) {
-					body, _ := s.pageBody(sessionName)
-					if strings.Contains(body, text) {
-						ok = true
-						break
-					}
-					time.Sleep(200 * time.Millisecond)
+				// Playwright fly: verify_text_visible is an immediate assertion —
+				// no polling, no auto-wait. Report error when the text is not
+				// currently visible.
+				body, err := s.pageBody(sessionName)
+				if err != nil {
+					return "", nil, err
 				}
-				return jsonString(map[string]any{"ok": ok, "text": text}), map[string]any{"ok": ok, "text": text}, nil
+				ok := strings.Contains(body, text)
+				if !ok {
+					return "", nil, fmt.Errorf("text not found: %q", text)
+				}
+				return jsonString(map[string]any{"ok": true, "text": text}), map[string]any{"ok": true, "text": text}, nil
 			},
 		},
 		"handle_dialog": {

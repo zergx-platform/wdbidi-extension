@@ -44,13 +44,12 @@ tools:
         depth: { type: integer }
         boxes: { type: boolean }
   - name: screenshot
-    description: Take a screenshot of the current page (or an element by ref).
+    description: Take a screenshot of the current page (or an element by ref). PNG only.
     input_schema:
       type: object
       properties:
         element: { type: string }
         fullPage: { type: boolean }
-        type: { type: string, enum: [png, jpeg, webp] }
   - name: click
     description: Click an element (by aria ref or CSS selector).
     input_schema:
@@ -115,13 +114,14 @@ tools:
         endElement: { type: string }
       required: [startElement, endElement]
   - name: drop
-    description: Set files on a file input (by aria ref or CSS selector).
+    description: Drop files or MIME-typed data onto an element, as if dragged from outside the page. At least one of paths or data must be provided.
     input_schema:
       type: object
       properties:
         element: { type: string }
         paths: { type: array, items: { type: string } }
-      required: [element, paths]
+        data: { type: object, additionalProperties: { type: string } }
+      required: [element]
   - name: file_upload
     description: Upload files to a file input (by aria ref or CSS selector).
     input_schema:
@@ -146,7 +146,7 @@ tools:
         text: { type: string }
         regex: { type: string }
   - name: expect_text
-    description: Verify that text is visible on the page.
+    description: Verify that text is visible on the page right now. Fails (with an error) if the text is not found, like an assertion.
     input_schema:
       type: object
       properties:

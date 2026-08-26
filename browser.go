@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -232,8 +235,12 @@ func isAriaRef(s string) bool {
 }
 
 // ariaSnapshot returns the injected snapshot (yaml text, json, boxes).
-func (s *server) ariaSnapshot(sessionName string, boxes bool) (yamlText string, jsonTree any, boxMap map[string]box, err error) {
-	fn := fmt.Sprintf(`() => { %s ; return globalThis.__ariaSnapshot.snapshotWithBoxes(document.body, { mode: 'ai', boxes: %t }); }`, ariaBundle, boxes)
+func (s *server) ariaSnapshot(sessionName string, boxes bool, depth int) (yamlText string, jsonTree any, boxMap map[string]box, err error) {
+	depthArg := "undefined"
+	if depth > 0 {
+		depthArg = strconv.Itoa(depth)
+	}
+	fn := fmt.Sprintf(`() => { %s ; return globalThis.__ariaSnapshot.snapshotWithBoxes(document.body, { mode: 'ai', boxes: %t, depth: %s }); }`, ariaBundle, boxes, depthArg)
 	v, err := s.callFunction(sessionName, fn, nil)
 	if err != nil {
 		return "", nil, nil, err
@@ -397,12 +404,15 @@ func (s *server) evalRaw(ctx string, params map[string]any) (json.RawMessage, er
 // screenshotElement captures the browsing context screenshot, optionally
 // cropping to an element's bounding box (via injected getBoundingClientRect).
 // The base64 is always PNG (BiDi captureScreenshot only supports PNG).
-func (s *server) screenshotElement(sessionName, element string) (string, error) {
+func (s *server) screenshotElement(sessionName, element string, fullPage bool) (string, error) {
 	ctx, err := s.ensureContext(sessionName)
 	if err != nil {
 		return "", err
 	}
 	if element != "" {
+		if fullPage {
+			return "", fmt.Errorf("fullPage cannot be combined with element")
+		}
 		// Get the element's box, then capture the context and crop client-side
 		// (BiDi has no element-scoped captureScreenshot).
 		sel := toSelector(element)
@@ -437,6 +447,9 @@ func (s *server) screenshotElement(sessionName, element string) (string, error) 
 			return "", err
 		}
 		return cropPNG(out.Data, cx, cy, cw, ch)
+	}
+	if fullPage {
+		return s.fullPageScreenshot(ctx)
 	}
 	raw, err := s.bidiCall("browsingContext.captureScreenshot", map[string]any{"context": ctx})
 	if err != nil {
@@ -644,4 +657,59 @@ func (s *server) deleteCookies(sessionName, name string) error {
 	}
 	_, err = s.bidiCall("storage.deleteCookies", params)
 	return err
+}
+
+// dropData synthesizes an HTML5 drag-and-drop onto the target element: a
+// DataTransfer carrying the given files' content and/or MIME data, then
+// dispatches dragenter/dragover/drop on the element. Files are read from the
+// local filesystem (server-side) so their bytes can be passed into the page.
+func (s *server) dropData(sessionName, element string, files []string, data map[string]string) error {
+	sel := toSelector(element)
+	// Build the injected arguments: [{name, content}, ...] for files.
+	type fileArg struct {
+		Name    string `json:"name"`
+		Content string `json:"content"`
+	}
+	filesArr := make([]fileArg, 0, len(files))
+	for _, p := range files {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return fmt.Errorf("read %s: %w", p, err)
+		}
+		name := p
+		if idx := strings.LastIndexByte(p, '/'); idx >= 0 {
+			name = p[idx+1:]
+		}
+		filesArr = append(filesArr, fileArg{Name: name, Content: string(b)})
+	}
+	filesJSON, _ := json.Marshal(filesArr)
+	dataJSON, _ := json.Marshal(data)
+
+	fn := `(sel, filesJSON, dataJSON) => {
+      const el = document.querySelector(sel);
+      if (!el) return false;
+      const files = JSON.parse(filesJSON);
+      const data = JSON.parse(dataJSON);
+      const dt = new DataTransfer();
+      for (const f of files) dt.items.add(new File([f.content], f.name, { type: 'application/octet-stream' }));
+      for (const [mime, value] of Object.entries(data)) dt.items.add(value, mime);
+      const rect = el.getBoundingClientRect();
+      const opts = { bubbles: true, cancelable: true, clientX: rect.x + rect.width/2, clientY: rect.y + rect.height/2, dataTransfer: dt };
+      el.dispatchEvent(new DragEvent('dragenter', opts));
+      el.dispatchEvent(new DragEvent('dragover', opts));
+      el.dispatchEvent(new DragEvent('drop', opts));
+      return true;
+    }`
+	v, err := s.callFunction(sessionName, fn, []map[string]any{
+		{"type": "string", "value": sel},
+		{"type": "string", "value": string(filesJSON)},
+		{"type": "string", "value": string(dataJSON)},
+	})
+	if err != nil {
+		return err
+	}
+	if b, ok := remoteString(v); ok && b == "false" {
+		return fmt.Errorf("drop target not found")
+	}
+	return nil
 }
