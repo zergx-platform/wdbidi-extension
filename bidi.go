@@ -25,6 +25,7 @@ type bidiResponse struct {
 	ID      int             `json:"id,omitempty"`
 	Method  string          `json:"method,omitempty"`
 	Type    string          `json:"type,omitempty"`
+	Params  json.RawMessage `json:"params,omitempty"`
 	Result  json.RawMessage `json:"result,omitempty"`
 	Error   string          `json:"error,omitempty"`
 	Message string          `json:"message,omitempty"`
@@ -95,8 +96,7 @@ func (c *BiDiConn) readLoop() {
 			h := c.events[msg.Method]
 			c.mu.Unlock()
 			if h != nil {
-				params, _ := json.Marshal(msg)
-				h(params)
+				h(msg.Params)
 			}
 		}
 	}
@@ -192,6 +192,15 @@ type driverSession struct {
 	conn      *BiDiConn
 }
 
+type netEntry struct {
+	Method string `json:"method"`
+	URL    string `json:"url"`
+}
+
+type promptEvent struct {
+	ctx string
+}
+
 type server struct {
 	ext         *abep.Extension
 	seleniumURL string
@@ -199,12 +208,22 @@ type server struct {
 	mu       sync.Mutex
 	driver   *driverSession
 	contexts map[string]string // agent sessionName -> browsing context id
+	ctx2ses  map[string]string // browsing context id -> agent sessionName
+
+	netMu         sync.Mutex
+	netLog        map[string][]netEntry // agent sessionName -> captured requests
+	subscribed    bool
+	promptMu      sync.Mutex
+	promptWaiters map[string][]chan promptEvent // context id -> waiters
 }
 
 func newServer() *server {
 	return &server{
-		seleniumURL: envOr("RUCODER_SELENIUM_URL", "http://selenium.temp.svc.cluster.local:4444"),
-		contexts:    map[string]string{},
+		seleniumURL:   envOr("RUCODER_SELENIUM_URL", "http://selenium.temp.svc.cluster.local:4444"),
+		contexts:      map[string]string{},
+		ctx2ses:       map[string]string{},
+		netLog:        map[string][]netEntry{},
+		promptWaiters: map[string][]chan promptEvent{},
 	}
 }
 
@@ -228,6 +247,10 @@ func (s *server) newWebDriverSession() (*driverSession, error) {
 			"alwaysMatch": map[string]any{
 				"browserName":  s.browserName(),
 				"webSocketUrl": true,
+				// Keep dialogs open so the tool's handle_dialog can wait for
+				// the event and call browsingContext.handleUserPrompt; the
+				// default "dismiss and notify" auto-closes them first.
+				"unhandledPromptBehavior": "ignore",
 				"goog:chromeOptions": map[string]any{
 					"args": []string{"--no-sandbox", "--disable-dev-shm-usage", "--headless=new"},
 				},
@@ -281,16 +304,101 @@ func (s *server) newWebDriverSession() (*driverSession, error) {
 // ensureDriver lazily creates the process-wide Selenium session + BiDi conn.
 func (s *server) ensureDriver() (*driverSession, error) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.driver != nil {
-		return s.driver, nil
+		d := s.driver
+		s.mu.Unlock()
+		return d, nil
 	}
+	s.mu.Unlock()
+
 	d, err := s.newWebDriverSession()
 	if err != nil {
 		return nil, err
 	}
+	// Wire event subscriptions before exposing the driver, so no event is
+	// missed between session creation and the first tool call.
+	if err := s.subscribeEvents(d); err != nil {
+		d.conn.Close()
+		return nil, err
+	}
+	s.mu.Lock()
 	s.driver = d
+	s.mu.Unlock()
 	return d, nil
+}
+
+// subscribeEvents registers the BiDi event handlers once per process lifetime
+// (network.beforeRequestSent, browsingContext.userPromptOpened, contextCreated).
+func (s *server) subscribeEvents(d *driverSession) error {
+	s.netMu.Lock()
+	already := s.subscribed
+	s.subscribed = true
+	s.netMu.Unlock()
+	if already {
+		return nil
+	}
+
+	d.conn.On("network.beforeRequestSent", func(raw json.RawMessage) {
+		var ev struct {
+			Context string `json:"context"`
+			Request struct {
+				Method string `json:"method"`
+				URL    string `json:"url"`
+			} `json:"request"`
+		}
+		if err := json.Unmarshal(raw, &ev); err != nil {
+			return
+		}
+		s.netMu.Lock()
+		sid := s.ctx2ses[ev.Context]
+		if sid != "" {
+			s.netLog[sid] = append(s.netLog[sid], netEntry{Method: ev.Request.Method, URL: ev.Request.URL})
+		}
+		s.netMu.Unlock()
+	})
+
+	d.conn.On("browsingContext.userPromptOpened", func(raw json.RawMessage) {
+		var ev struct {
+			Context string `json:"context"`
+		}
+		if err := json.Unmarshal(raw, &ev); err != nil {
+			return
+		}
+		ctx := ev.Context
+		s.promptMu.Lock()
+		waiters := s.promptWaiters[ctx]
+		delete(s.promptWaiters, ctx)
+		s.promptMu.Unlock()
+		for _, ch := range waiters {
+			select {
+			case ch <- promptEvent{ctx: ctx}:
+			default:
+			}
+		}
+	})
+
+	d.conn.On("browsingContext.contextCreated", func(raw json.RawMessage) {
+		var ev struct {
+			Context string `json:"context"`
+		}
+		if err := json.Unmarshal(raw, &ev); err != nil {
+			return
+		}
+		// Track reverse mapping so network events can attribute to a session.
+		s.mu.Lock()
+		for sid, cid := range s.contexts {
+			if cid == ev.Context {
+				s.ctx2ses[cid] = sid
+				break
+			}
+		}
+		s.mu.Unlock()
+	})
+
+	_, err := d.conn.Call("session.subscribe", map[string]any{
+		"events": []string{"network.beforeRequestSent", "browsingContext.userPromptOpened"},
+	})
+	return err
 }
 
 // ensureContext lazily creates the agent session's browsing context (tab).
@@ -321,13 +429,17 @@ func (s *server) ensureContext(sessionName string) (string, error) {
 	}
 	s.mu.Lock()
 	s.contexts[sessionName] = out.Context
+	s.ctx2ses[out.Context] = sessionName
 	s.mu.Unlock()
 	return out.Context, nil
 }
 
 func (s *server) resetContext(sessionName string) {
 	s.mu.Lock()
-	delete(s.contexts, sessionName)
+	if cid, ok := s.contexts[sessionName]; ok {
+		delete(s.contexts, sessionName)
+		delete(s.ctx2ses, cid)
+	}
 	s.mu.Unlock()
 }
 
@@ -342,4 +454,57 @@ func (s *server) bidiCall(method string, params map[string]any) (json.RawMessage
 		return nil, err
 	}
 	return d.conn.Call(method, params)
+}
+
+// networkLog returns the captured requests for a session (subscribed at the
+// process level via network.beforeRequestSent).
+func (s *server) networkLog(sessionName string) []map[string]any {
+	s.netMu.Lock()
+	defer s.netMu.Unlock()
+	entries := s.netLog[sessionName]
+	out := make([]map[string]any, 0, len(entries))
+	for _, e := range entries {
+		out = append(out, map[string]any{"method": e.Method, "url": e.URL})
+	}
+	return out
+}
+
+// waitForPrompt waits for a user prompt (alert/confirm/prompt) on the context,
+// then handles it. Mirrors Playwright's handle-dialog-on-open semantics.
+func (s *server) waitForPrompt(sessionName string, accept bool, promptText string, timeout time.Duration) (bool, error) {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return false, err
+	}
+	ch := make(chan promptEvent, 1)
+	s.promptMu.Lock()
+	s.promptWaiters[ctx] = append(s.promptWaiters[ctx], ch)
+	s.promptMu.Unlock()
+
+	wait := func() {
+		// Remove our waiter on exit.
+		s.promptMu.Lock()
+		ws := s.promptWaiters[ctx]
+		for i, w := range ws {
+			if w == ch {
+				s.promptWaiters[ctx] = append(ws[:i], ws[i+1:]...)
+				break
+			}
+		}
+		s.promptMu.Unlock()
+	}
+	defer wait()
+
+	select {
+	case <-ch:
+	case <-time.After(timeout):
+		return false, nil
+	}
+
+	params := map[string]any{"context": ctx, "accept": accept}
+	if promptText != "" {
+		params["userText"] = promptText
+	}
+	_, err = s.bidiCall("browsingContext.handleUserPrompt", params)
+	return err == nil, err
 }

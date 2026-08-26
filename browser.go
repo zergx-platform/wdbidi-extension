@@ -329,3 +329,145 @@ func (s *server) waitActionable(sessionName, element string, enabled bool) (poin
 	}
 	return point{}, fmt.Errorf("element not actionable within %s: %s", s.actionTimeout(), lastErr)
 }
+
+// evaluateSharedID resolves a CSS/ref selector to the element's BiDi sharedId
+// so it can be passed to input.setFiles. Returns "" when the element is
+// missing. Uses a DOM-query + a round-trip: we evaluate with resultOwnership
+// "root" and a script that returns the element; BiDi serializes it as a node
+// RemoteValue carrying a sharedId.
+func (s *server) evaluateSharedID(sessionName, sel string) (string, error) {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return "", err
+	}
+	// callFunction returns document.querySelector(sel); with resultOwnership
+	// root the returned value is a node reference. We request serialization so
+	// the RemoteValue is the node handle itself.
+	res, err := s.evalRaw(ctx, map[string]any{
+		"functionDeclaration": `(sel) => document.querySelector(sel)`,
+		"arguments":           []map[string]any{{"type": "string", "value": sel}},
+		"resultOwnership":     "root",
+	})
+	if err != nil {
+		return "", err
+	}
+	var rv struct {
+		Type     string `json:"type"`
+		SharedID string `json:"sharedId"`
+	}
+	if err := json.Unmarshal(res, &rv); err != nil {
+		return "", err
+	}
+	if rv.SharedID != "" {
+		return rv.SharedID, nil
+	}
+	return "", nil
+}
+
+// evalRaw issues script.callFunction with explicit params and returns the raw
+// result JSON (used for node-handle serialization).
+func (s *server) evalRaw(ctx string, params map[string]any) (json.RawMessage, error) {
+	params["target"] = map[string]any{"context": ctx}
+	params["awaitPromise"] = true
+	d, err := s.ensureDriver()
+	if err != nil {
+		return nil, err
+	}
+	method := "script.evaluate"
+	if _, isCall := params["functionDeclaration"]; isCall {
+		method = "script.callFunction"
+	}
+	res, err := d.conn.Call(method, params)
+	if err != nil {
+		return nil, err
+	}
+	var out struct {
+		Type   string          `json:"type"`
+		Result json.RawMessage `json:"result"`
+	}
+	if err := json.Unmarshal(res, &out); err != nil {
+		return nil, err
+	}
+	if out.Type == "exception" {
+		return nil, fmt.Errorf("evalRaw exception")
+	}
+	return out.Result, nil
+}
+
+// screenshotElement captures the browsing context screenshot, optionally
+// cropping to an element's bounding box (via injected getBoundingClientRect).
+// The base64 is always PNG (BiDi captureScreenshot only supports PNG).
+func (s *server) screenshotElement(sessionName, element string) (string, error) {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return "", err
+	}
+	if element != "" {
+		// Get the element's box, then capture the context and crop client-side
+		// (BiDi has no element-scoped captureScreenshot).
+		sel := toSelector(element)
+		fn := `(sel) => { const el = document.querySelector(sel); if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) }; }`
+		v, err := s.callFunction(sessionName, fn, []map[string]any{{"type": "string", "value": sel}})
+		if err != nil {
+			return "", err
+		}
+		boxVal := unwrapRemote(v)
+		boxMap, ok := boxVal.(map[string]any)
+		if !ok || boxMap["width"] == nil {
+			return "", fmt.Errorf("element not found: %s", element)
+		}
+		cx := int(numF(boxMap, "x"))
+		cy := int(numF(boxMap, "y"))
+		cw := int(numF(boxMap, "width"))
+		ch := int(numF(boxMap, "height"))
+		if cw <= 0 || ch <= 0 {
+			return "", fmt.Errorf("element has zero size")
+		}
+		// Capture full context then crop via Go image decoding.
+		raw, err := s.bidiCall("browsingContext.captureScreenshot", map[string]any{"context": ctx})
+		if err != nil {
+			return "", err
+		}
+		var out struct {
+			Data string `json:"data"`
+		}
+		if err := json.Unmarshal(raw, &out); err != nil {
+			return "", err
+		}
+		return cropPNG(out.Data, cx, cy, cw, ch)
+	}
+	raw, err := s.bidiCall("browsingContext.captureScreenshot", map[string]any{"context": ctx})
+	if err != nil {
+		return "", err
+	}
+	var out struct {
+		Data string `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return "", err
+	}
+	return out.Data, nil
+}
+
+func numF(m map[string]any, k string) float64 {
+	if v, ok := m[k].(float64); ok {
+		return v
+	}
+	return 0
+}
+
+// evalRawForSel probes the raw result of a script.callFunction returning an
+// element, for debugging node-handle serialization.
+func (s *server) evalRawForSel(sessionName, sel string) (json.RawMessage, error) {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return nil, err
+	}
+	return s.evalRaw(ctx, map[string]any{
+		"functionDeclaration": `(sel) => document.querySelector(sel)`,
+		"arguments":           []map[string]any{{"type": "string", "value": sel}},
+		"resultOwnership":     "root",
+	})
+}

@@ -122,7 +122,8 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 				if typ == "" {
 					typ = "png"
 				}
-				data, err := s.screenshot(sessionName)
+				element := argString(args, "element")
+				data, err := s.screenshotElement(sessionName, element)
 				if err != nil {
 					return "", nil, err
 				}
@@ -402,17 +403,12 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
 				accept := argBool(args, "accept", true)
 				promptText := argString(args, "promptText")
-				ctxid, err := s.ensureContext(sessionName)
+				// Wait for the dialog to open (userPromptOpened event) and then
+				// handle it — rather than firing handleUserPrompt blind.
+				handled, err := s.waitForPrompt(sessionName, accept, promptText, 30*time.Second)
 				if err != nil {
 					return "", nil, err
 				}
-				_, _ = s.bidiCall("session.subscribe", map[string]any{"events": []string{"browsingContext.userPromptOpened"}})
-				params := map[string]any{"context": ctxid, "accept": accept}
-				if promptText != "" {
-					params["userText"] = promptText
-				}
-				_, err = s.bidiCall("browsingContext.handleUserPrompt", params)
-				handled := err == nil
 				return jsonString(map[string]any{"registered": true, "handled": handled}), map[string]any{}, nil
 			},
 		},
@@ -590,32 +586,28 @@ func (s *server) keyActions(ctxid string, actions []map[string]any) error {
 }
 
 func (s *server) setFiles(sessionName, element string, files []string) error {
-	sel := toSelector(element)
-	fn := `(sel, files) => { const el = document.querySelector(sel); if (!el || el.type !== 'file') return false;
-      const dt = new DataTransfer();
-      for (const f of files) dt.items.add(new File([f.content], f.name, { type: 'application/octet-stream' }));
-      el.files = dt.files;
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      return true; }`
-	arr := make([]any, len(files))
-	for i, p := range files {
-		name := p
-		if idx := strings.LastIndexByte(p, '/'); idx >= 0 {
-			name = p[idx+1:]
-		}
-		arr[i] = map[string]any{
-			"type": "object",
-			"value": []any{
-				[]any{"name", map[string]any{"type": "string", "value": name}},
-				[]any{"content", map[string]any{"type": "string", "value": ""}},
-			},
-		}
+	ctxid, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
 	}
-	_, err := s.callFunction(sessionName, fn, []map[string]any{
-		{"type": "string", "value": sel},
-		{"type": "array", "value": arr},
+	// BiDi input.setFiles needs the element's sharedId and absolute paths on
+	// the server; Selenium standalone forwards them to the browser process.
+	rid, err := s.evaluateSharedID(sessionName, toSelector(element))
+	if err != nil {
+		return err
+	}
+	if rid == "" {
+		return fmt.Errorf("element not found: %s", element)
+	}
+	_, err = s.bidiCall("input.setFiles", map[string]any{
+		"context": ctxid,
+		"element": map[string]any{"sharedId": rid},
+		"files":   files,
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("input.setFiles: %w", err)
+	}
+	return nil
 }
 
 func (s *server) pageBody(sessionName string) (string, error) {
@@ -638,11 +630,4 @@ func jsonString(v any) string {
 
 func round(f float64) int {
 	return int(math.Round(f))
-}
-
-// networkLog is a stub for network_requests: BiDi network events require a
-// per-connection event subscription. Keep the ring buffer in server state.
-func (s *server) networkLog(sessionName string) []map[string]any {
-	_ = sessionName
-	return []map[string]any{}
 }
