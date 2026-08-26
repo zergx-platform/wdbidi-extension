@@ -195,3 +195,81 @@ tools:
         format: { type: string, enum: [text, markdown, html] }
         timeout: { type: integer }
       required: [url]
+  - name: reload
+    description: Reload the current page.
+    input_schema:
+      type: object
+      properties: {}
+  - name: print_pdf
+    description: Print the current page as a PDF (returns base64).
+    input_schema:
+      type: object
+      properties: {}
+  - name: cookies_get
+    description: Get cookies for the current page.
+    input_schema:
+      type: object
+      properties:
+        url: { type: string }
+  - name: cookies_set
+    description: Set a cookie for the current page.
+    input_schema:
+      type: object
+      properties:
+        name: { type: string }
+        value: { type: string }
+        domain: { type: string }
+        path: { type: string }
+      required: [name, value, domain]
+  - name: cookies_delete
+    description: Delete cookies (by name, or all) for the current page.
+    input_schema:
+      type: object
+      properties:
+        name: { type: string }
+  - name: route
+    description: Intercept network requests matching a URL pattern. mode=abort blocks, mode=provide responds with status+body+contentType, mode=continue forwards. Returns a route id.
+    input_schema:
+      type: object
+      properties:
+        url: { type: string }
+        mode: { type: string, enum: [abort, provide, continue] }
+        status: { type: integer }
+        body: { type: string }
+        contentType: { type: string }
+      required: [url, mode]
+  - name: unroute
+    description: Remove a network intercept by route id.
+    input_schema:
+      type: object
+      properties:
+        routeId: { type: string }
+      required: [routeId]
+  - name: console_logs
+    description: Return captured browser console log entries for this session.
+    input_schema:
+      type: object
+      properties: {}
+  - name: emulate
+    description: Override browser emulation settings (userAgent, timezone, geolocation).
+    input_schema:
+      type: object
+      properties:
+        userAgent: { type: string }
+        timezone: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+  - name: add_init_script
+    description: Add a script that runs on every subsequent navigation (before page scripts).
+    input_schema:
+      type: object
+      properties:
+        script: { type: string }
+      required: [script]
+  - name: set_bypass_csp
+    description: Enable or disable bypassing the page Content-Security-Policy (lets evaluate/init-scripts run on strict-CSP pages).
+    input_schema:
+      type: object
+      properties:
+        enabled: { type: boolean }
+      required: [enabled]

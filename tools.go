@@ -281,6 +281,8 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 					{"type": "pointerMove", "x": round(ep.X), "y": round(ep.Y)},
 					{"type": "pointerUp", "button": 0},
 				}); err != nil {
+					// Best-effort: release any stuck input state after a failed drag.
+					_ = s.releaseActions(sessionName)
 					return "", nil, err
 				}
 				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
@@ -488,6 +490,12 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 				default:
 					idx := argInt(args, "index", 0)
 					if idx >= 0 && idx < len(out.Contexts) {
+						// Activate the chosen context (real tab switch, not just an
+						// index echo) via browsingContext.activate.
+						target := out.Contexts[idx].Context
+						if target != "" {
+							_, _ = s.bidiCall("browsingContext.activate", map[string]any{"context": target})
+						}
 						return jsonString(map[string]any{"selected": idx}), map[string]any{"selected": idx}, nil
 					}
 					return jsonString(map[string]any{"selected": -1}), map[string]any{"selected": -1}, nil
@@ -510,6 +518,145 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 					return "", nil, err
 				}
 				return jsonString(r), r, nil
+			},
+		},
+		"reload": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				if err := s.reload(sessionName); err != nil {
+					return "", nil, err
+				}
+				u, _ := s.contextURLOf(sessionName)
+				return jsonString(map[string]any{"reloaded": true, "url": u}), map[string]any{"url": u}, nil
+			},
+		},
+		"print_pdf": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				data, err := s.printPDF(sessionName)
+				if err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"pdf": "data:application/pdf;base64," + data}), map[string]any{"bytes": len(data) * 3 / 4}, nil
+			},
+		},
+		"cookies_get": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				cookies, err := s.getCookies(sessionName)
+				if err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"cookies": cookies}), map[string]any{"cookies": cookies}, nil
+			},
+		},
+		"cookies_set": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				name := argString(args, "name")
+				value := argString(args, "value")
+				domain := argString(args, "domain")
+				path := argString(args, "path")
+				if name == "" || domain == "" {
+					return "", nil, fmt.Errorf("cookies_set requires name, value, domain")
+				}
+				if path == "" {
+					path = "/"
+				}
+				if err := s.setCookie(sessionName, name, value, domain, path); err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
+			},
+		},
+		"cookies_delete": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				name := argString(args, "name")
+				if err := s.deleteCookies(sessionName, name); err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
+			},
+		},
+		"route": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				url := argString(args, "url")
+				mode := argString(args, "mode")
+				if url == "" || mode == "" {
+					return "", nil, fmt.Errorf("route requires url and mode")
+				}
+				var kind routeKind
+				switch mode {
+				case "abort":
+					kind = routeAbort
+				case "provide":
+					kind = routeProvide
+				default:
+					kind = routeContinue
+				}
+				status := argInt(args, "status", 200)
+				body := argString(args, "body")
+				ct := argString(args, "contentType")
+				if ct == "" {
+					ct = "text/plain"
+				}
+				rid, err := s.addRoute(url, kind, status, body, ct)
+				if err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"routeId": rid}), map[string]any{"routeId": rid}, nil
+			},
+		},
+		"unroute": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				rid := argString(args, "routeId")
+				if rid == "" {
+					return "", nil, fmt.Errorf("unroute requires routeId")
+				}
+				if err := s.removeRoute(rid); err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
+			},
+		},
+		"console_logs": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				entries := s.consoleLogs(sessionName)
+				return jsonString(map[string]any{"logs": entries}), map[string]any{"logs": entries}, nil
+			},
+		},
+		"emulate": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				ua := argString(args, "userAgent")
+				tz := argString(args, "timezone")
+				var lat, lon *float64
+				if v, ok := args["latitude"].(float64); ok {
+					lat = &v
+				}
+				if v, ok := args["longitude"].(float64); ok {
+					lon = &v
+				}
+				if err := s.emulate(sessionName, ua, tz, lat, lon); err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
+			},
+		},
+		"add_init_script": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				script := argString(args, "script")
+				if script == "" {
+					return "", nil, fmt.Errorf("add_init_script requires script")
+				}
+				if err := s.addInitScript(sessionName, script); err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
+			},
+		},
+		"set_bypass_csp": {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+				enabled := argBool(args, "enabled", true)
+				if err := s.bypassCSP(sessionName, enabled); err != nil {
+					return "", nil, err
+				}
+				return jsonString(map[string]any{"ok": true, "bypassCSP": enabled}), map[string]any{"bypassCSP": enabled}, nil
 			},
 		},
 	}

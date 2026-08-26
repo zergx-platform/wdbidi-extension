@@ -197,6 +197,12 @@ type netEntry struct {
 	URL    string `json:"url"`
 }
 
+type consoleEntry struct {
+	Type  string `json:"type"`
+	Text  string `json:"text"`
+	Level string `json:"level"`
+}
+
 type promptEvent struct {
 	ctx string
 }
@@ -215,6 +221,9 @@ type server struct {
 	subscribed    bool
 	promptMu      sync.Mutex
 	promptWaiters map[string][]chan promptEvent // context id -> waiters
+	consoleMu     sync.Mutex
+	consoles      map[string][]consoleEntry // agent sessionName -> console logs
+	routes        *routeState
 }
 
 func newServer() *server {
@@ -224,6 +233,8 @@ func newServer() *server {
 		ctx2ses:       map[string]string{},
 		netLog:        map[string][]netEntry{},
 		promptWaiters: map[string][]chan promptEvent{},
+		consoles:      map[string][]consoleEntry{},
+		routes:        newRouteState(),
 	}
 }
 
@@ -507,4 +518,16 @@ func (s *server) waitForPrompt(sessionName string, accept bool, promptText strin
 	}
 	_, err = s.bidiCall("browsingContext.handleUserPrompt", params)
 	return err == nil, err
+}
+
+// consoleLogs returns captured console entries for a session.
+func (s *server) consoleLogs(sessionName string) []map[string]any {
+	s.consoleMu.Lock()
+	defer s.consoleMu.Unlock()
+	entries := s.consoles[sessionName]
+	out := make([]map[string]any, 0, len(entries))
+	for _, e := range entries {
+		out = append(out, map[string]any{"type": e.Type, "level": e.Level, "text": e.Text})
+	}
+	return out
 }

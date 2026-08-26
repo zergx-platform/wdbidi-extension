@@ -471,3 +471,186 @@ func (s *server) evalRawForSel(sessionName, sel string) (json.RawMessage, error)
 		"resultOwnership":     "root",
 	})
 }
+
+// ---- newly covered BiDi capabilities (BiDi-native) ----
+
+func (s *server) reload(sessionName string) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	_, err = s.bidiCall("browsingContext.reload", map[string]any{"context": ctx, "wait": "complete"})
+	return err
+}
+
+func (s *server) contextURLOf(sessionName string) (string, error) {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return "", err
+	}
+	return s.contextURL(ctx)
+}
+
+func (s *server) printPDF(sessionName string) (string, error) {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return "", err
+	}
+	res, err := s.bidiCall("browsingContext.print", map[string]any{"context": ctx})
+	if err != nil {
+		return "", err
+	}
+	var out struct {
+		Data string `json:"data"`
+	}
+	if err := json.Unmarshal(res, &out); err != nil {
+		return "", err
+	}
+	return out.Data, nil
+}
+
+func (s *server) activate(sessionName string) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	_, err = s.bidiCall("browsingContext.activate", map[string]any{"context": ctx})
+	return err
+}
+
+func (s *server) releaseActions(sessionName string) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	_, err = s.bidiCall("input.releaseActions", map[string]any{"context": ctx})
+	return err
+}
+
+func (s *server) bypassCSP(sessionName string, enabled bool) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	_, err = s.bidiCall("browsingContext.setBypassCSP", map[string]any{"context": ctx, "bypassCSP": enabled})
+	return err
+}
+
+func (s *server) addInitScript(sessionName, functionDeclaration string) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	_, err = s.bidiCall("script.addPreloadScript", map[string]any{
+		"functionDeclaration": functionDeclaration,
+		"contexts":            []string{ctx},
+	})
+	return err
+}
+
+func (s *server) emulate(sessionName, userAgent, timezone string, lat, lon *float64) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	if userAgent != "" {
+		if _, err := s.bidiCall("emulation.setUserAgentOverride", map[string]any{
+			"context": ctx, "userAgent": userAgent,
+		}); err != nil {
+			return err
+		}
+	}
+	if timezone != "" {
+		if _, err := s.bidiCall("emulation.setTimezoneOverride", map[string]any{
+			"context": ctx, "timezone": timezone,
+		}); err != nil {
+			return err
+		}
+	}
+	if lat != nil && lon != nil {
+		if _, err := s.bidiCall("emulation.setGeolocationOverride", map[string]any{
+			"context": ctx,
+			"coordinates": map[string]any{
+				"latitude": *lat, "longitude": *lon, "accuracy": float64(1.0),
+			},
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *server) getCookies(sessionName string) ([]map[string]any, error) {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.bidiCall("storage.getCookies", map[string]any{
+		"partition": map[string]any{"type": "context", "context": ctx},
+	})
+	if err != nil {
+		return nil, err
+	}
+	var out struct {
+		Cookies []struct {
+			Name  string `json:"name"`
+			Value struct {
+				Type  string `json:"type"`
+				Value string `json:"value"`
+			} `json:"value"`
+			Domain   string `json:"domain"`
+			Path     string `json:"path"`
+			HttpOnly bool   `json:"httpOnly"`
+			Secure   bool   `json:"secure"`
+			SameSite string `json:"sameSite"`
+			Expiry   int64  `json:"expiry"`
+		} `json:"cookies"`
+	}
+	if err := json.Unmarshal(res, &out); err != nil {
+		return nil, err
+	}
+	cookies := make([]map[string]any, 0, len(out.Cookies))
+	for _, c := range out.Cookies {
+		cookies = append(cookies, map[string]any{
+			"name": c.Name, "value": c.Value.Value, "domain": c.Domain,
+			"path": c.Path, "httpOnly": c.HttpOnly, "secure": c.Secure, "sameSite": c.SameSite,
+		})
+	}
+	return cookies, nil
+}
+
+func (s *server) setCookie(sessionName, name, value, domain, path string) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	_, err = s.bidiCall("storage.setCookie", map[string]any{
+		"cookie": map[string]any{
+			"name":   name,
+			"value":  map[string]any{"type": "string", "value": value},
+			"domain": domain,
+			"path":   path,
+		},
+		"partition": map[string]any{"type": "context", "context": ctx},
+	})
+	return err
+}
+
+func (s *server) deleteCookies(sessionName, name string) error {
+	ctx, err := s.ensureContext(sessionName)
+	if err != nil {
+		return err
+	}
+	filter := map[string]any{}
+	if name != "" {
+		filter["name"] = name
+	}
+	params := map[string]any{
+		"partition": map[string]any{"type": "context", "context": ctx},
+	}
+	if len(filter) > 0 {
+		params["filter"] = filter
+	}
+	_, err = s.bidiCall("storage.deleteCookies", params)
+	return err
+}
