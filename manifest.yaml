@@ -1,0 +1,197 @@
+# wdbidi-extension protocol manifest — single declarative source for the
+# extension's wire protocol (tools). Handlers are bound by name in code
+# (tools.go). Go rewrite of webdriver-extension: drives a Selenium standalone
+# node over WebDriver BiDi.
+
+id: webdriver
+version: 0.1.0
+
+tools:
+  - name: navigate
+    description: Navigate the browser to a URL.
+    input_schema:
+      type: object
+      properties:
+        url: { type: string }
+      required: [url]
+  - name: navigate_back
+    description: Go back in the browser's history.
+    input_schema:
+      type: object
+      properties: {}
+  - name: navigate_forward
+    description: Go forward in the browser's history.
+    input_schema:
+      type: object
+      properties: {}
+  - name: close
+    description: Close the current browser page (and reset the session's browsing context).
+    input_schema:
+      type: object
+      properties: {}
+  - name: resize
+    description: Resize the browser viewport.
+    input_schema:
+      type: object
+      properties:
+        width: { type: integer }
+        height: { type: integer }
+  - name: snapshot
+    description: Capture an accessibility snapshot of the current page (mode ai, with refs and boxes).
+    input_schema:
+      type: object
+      properties:
+        depth: { type: integer }
+        boxes: { type: boolean }
+  - name: screenshot
+    description: Take a screenshot of the current page (or an element by ref).
+    input_schema:
+      type: object
+      properties:
+        element: { type: string }
+        fullPage: { type: boolean }
+        type: { type: string, enum: [png, jpeg, webp] }
+  - name: click
+    description: Click an element (by aria ref or CSS selector).
+    input_schema:
+      type: object
+      properties:
+        element: { type: string }
+        button: { type: string, enum: [left, right, middle] }
+        doubleClick: { type: boolean }
+      required: [element]
+  - name: hover
+    description: Hover over an element (by aria ref or CSS selector).
+    input_schema:
+      type: object
+      properties:
+        element: { type: string }
+      required: [element]
+  - name: type
+    description: Type text into an editable element.
+    input_schema:
+      type: object
+      properties:
+        element: { type: string }
+        text: { type: string }
+        slowly: { type: boolean }
+        submit: { type: boolean }
+      required: [element, text]
+  - name: select_option
+    description: Select options in a dropdown.
+    input_schema:
+      type: object
+      properties:
+        element: { type: string }
+        values: { type: array, items: { type: string } }
+      required: [element, values]
+  - name: fill_form
+    description: Fill multiple form fields in one call.
+    input_schema:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            type: object
+            properties:
+              target: { type: string }
+              value: { type: string }
+            required: [target, value]
+      required: [fields]
+  - name: press_key
+    description: Press a keyboard key.
+    input_schema:
+      type: object
+      properties:
+        key: { type: string }
+      required: [key]
+  - name: drag
+    description: Drag from one element to another.
+    input_schema:
+      type: object
+      properties:
+        startElement: { type: string }
+        endElement: { type: string }
+      required: [startElement, endElement]
+  - name: drop
+    description: Set files on a file input (by aria ref or CSS selector).
+    input_schema:
+      type: object
+      properties:
+        element: { type: string }
+        paths: { type: array, items: { type: string } }
+      required: [element, paths]
+  - name: file_upload
+    description: Upload files to a file input (by aria ref or CSS selector).
+    input_schema:
+      type: object
+      properties:
+        element: { type: string }
+        paths: { type: array, items: { type: string } }
+      required: [element, paths]
+  - name: find
+    description: Search the current page snapshot for text or a regex.
+    input_schema:
+      type: object
+      properties:
+        text: { type: string }
+        regex: { type: string }
+  - name: wait_for
+    description: Wait for time (seconds), text, or a regex.
+    input_schema:
+      type: object
+      properties:
+        time: { type: number }
+        text: { type: string }
+        regex: { type: string }
+  - name: expect_text
+    description: Verify that text is visible on the page.
+    input_schema:
+      type: object
+      properties:
+        text: { type: string }
+      required: [text]
+  - name: handle_dialog
+    description: Accept or dismiss the next browser dialog (alert/confirm/prompt).
+    input_schema:
+      type: object
+      properties:
+        accept: { type: boolean }
+        promptText: { type: string }
+  - name: evaluate
+    description: Evaluate a JavaScript expression in the page and return the JSON result.
+    input_schema:
+      type: object
+      properties:
+        code: { type: string }
+      required: [code]
+  - name: run_code_unsafe
+    description: Evaluate arbitrary JavaScript in the page (unsafe, same as evaluate).
+    input_schema:
+      type: object
+      properties:
+        code: { type: string }
+      required: [code]
+  - name: tabs
+    description: List, create, close, or select browser tabs (tabs in the session context).
+    input_schema:
+      type: object
+      properties:
+        action: { type: string, enum: [list, new, close, select] }
+        index: { type: integer }
+        url: { type: string }
+  - name: network_requests
+    description: List network requests made by the current page.
+    input_schema:
+      type: object
+      properties: {}
+  - name: webfetch
+    description: Fetch content from an HTTP(S) URL and return it as text, markdown, or html. Defaults to markdown.
+    input_schema:
+      type: object
+      properties:
+        url: { type: string }
+        format: { type: string, enum: [text, markdown, html] }
+        timeout: { type: integer }
+      required: [url]
