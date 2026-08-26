@@ -166,13 +166,6 @@ tools:
       properties:
         code: { type: string }
       required: [code]
-  - name: run_code_unsafe
-    description: Evaluate arbitrary JavaScript in the page (unsafe, same as evaluate).
-    input_schema:
-      type: object
-      properties:
-        code: { type: string }
-      required: [code]
   - name: tabs
     description: List, create, close, or select browser tabs (tabs in the session context).
     input_schema:

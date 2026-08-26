@@ -428,17 +428,6 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 				return jsonString(map[string]any{"result": result}), map[string]any{"result": result}, nil
 			},
 		},
-		"run_code_unsafe": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
-				code := argString(args, "code")
-				v, err := s.evaluate(sessionName, code)
-				if err != nil {
-					return "", nil, err
-				}
-				result := unwrapRemote(v)
-				return jsonString(map[string]any{"result": result}), map[string]any{"result": result}, nil
-			},
-		},
 		"tabs": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
 				action := argString(args, "action")
