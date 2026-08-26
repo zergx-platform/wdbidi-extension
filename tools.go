@@ -650,15 +650,6 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 				return jsonString(map[string]any{"ok": true}), map[string]any{"ok": true}, nil
 			},
 		},
-		"set_bypass_csp": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
-				enabled := argBool(args, "enabled", true)
-				if err := s.bypassCSP(sessionName, enabled); err != nil {
-					return "", nil, err
-				}
-				return jsonString(map[string]any{"ok": true, "bypassCSP": enabled}), map[string]any{"bypassCSP": enabled}, nil
-			},
-		},
 	}
 }
 

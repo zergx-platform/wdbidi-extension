@@ -527,22 +527,6 @@ func (s *server) releaseActions(sessionName string) error {
 	return err
 }
 
-func (s *server) bypassCSP(sessionName string, enabled bool) error {
-	ctx, err := s.ensureContext(sessionName)
-	if err != nil {
-		return err
-	}
-	// browsingContext.setBypassCSP: `bypass` bool + contexts list (may be nil).
-	params := map[string]any{"contexts": []string{ctx}}
-	if enabled {
-		params["bypass"] = true
-	} else {
-		params["bypass"] = nil
-	}
-	_, err = s.bidiCall("browsingContext.setBypassCSP", params)
-	return err
-}
-
 func (s *server) addInitScript(sessionName, functionDeclaration string) error {
 	ctx, err := s.ensureContext(sessionName)
 	if err != nil {

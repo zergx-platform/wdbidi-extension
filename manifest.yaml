@@ -266,10 +266,3 @@ tools:
       properties:
         script: { type: string }
       required: [script]
-  - name: set_bypass_csp
-    description: Enable or disable bypassing the page Content-Security-Policy (lets evaluate/init-scripts run on strict-CSP pages).
-    input_schema:
-      type: object
-      properties:
-        enabled: { type: boolean }
-      required: [enabled]
