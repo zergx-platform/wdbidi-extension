@@ -6,7 +6,7 @@ package main
 import (
 	"context"
 	_ "embed"
-	"forgejo.develop.10.199.64.20.nip.io/rucoder/go-shared/env"
+	"forgejo.develop.10.199.64.20.nip.io/zergx/go-shared/env"
 	"log/slog"
 	"os"
 
@@ -44,7 +44,7 @@ func main() {
 		abep.ServeOptions{
 			Run: func(runCtx context.Context, ext *abep.Extension) {
 				s.ext = ext
-				log.Info("listening", "port", env.Or("RUCODER_PORT", "8080"), "nats", natsURL, "selenium", s.seleniumURL)
+				log.Info("listening", "port", env.Or("ZERGX_PORT", "8080"), "nats", natsURL, "selenium", s.seleniumURL)
 			},
 		},
 	); err != nil {

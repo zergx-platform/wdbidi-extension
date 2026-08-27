@@ -9,11 +9,11 @@ import (
 )
 
 func TestE2E(t *testing.T) {
-	if os.Getenv("RUCODER_E2E") != "1" {
-		t.Skip("set RUCODER_E2E=1 to run against the cluster selenium")
+	if os.Getenv("ZERGX_E2E") != "1" {
+		t.Skip("set ZERGX_E2E=1 to run against the cluster selenium")
 	}
-	os.Setenv("RUCODER_SELENIUM_URL", "http://rucoder-selenium.temp.svc.cluster.local:4444")
-	os.Setenv("RUCODER_BROWSER_NAME", "chrome")
+	os.Setenv("ZERGX_SELENIUM_URL", "http://selenium.zergx.svc.cluster.local:4444")
+	os.Setenv("ZERGX_BROWSER_NAME", "chrome")
 	s := newServer()
 	sid := fmt.Sprintf("go-e2e-%d", time.Now().UnixNano())
 	h := s.handlers()
