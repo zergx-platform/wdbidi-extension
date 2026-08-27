@@ -51,7 +51,7 @@ func argStringSlice(a Args, k string) []string {
 func (s *server) handlers() map[string]abep.ToolSpec {
 	return map[string]abep.ToolSpec{
 		"navigate": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				url := argString(args, "url")
 				if url == "" {
 					return "", nil, fmt.Errorf("缺少 'url' 参数")
@@ -64,7 +64,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"navigate_back": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				u, err := s.traverseHistory(sessionName, -1)
 				if err != nil {
 					return "", nil, err
@@ -73,7 +73,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"navigate_forward": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				u, err := s.traverseHistory(sessionName, 1)
 				if err != nil {
 					return "", nil, err
@@ -82,7 +82,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"close": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				if ctxid, err := s.currentContext(sessionName); err == nil {
 					_, _ = s.bidiCall("browsingContext.close", map[string]any{"context": ctxid})
 				}
@@ -91,7 +91,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"resize": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				w := argInt(args, "width", 1280)
 				h := argInt(args, "height", 720)
 				ctxid, err := s.ensureContext(sessionName)
@@ -107,7 +107,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"snapshot": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				boxes := argBool(args, "boxes", true)
 				depth := argInt(args, "depth", 0)
 				yamlText, jsonTree, boxMap, err := s.ariaSnapshot(sessionName, boxes, depth)
@@ -118,7 +118,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"screenshot": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				fullPage := argBool(args, "fullPage", false)
 				data, err := s.screenshotElement(sessionName, element, fullPage)
@@ -130,7 +130,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"click": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				if element == "" {
 					return "", nil, fmt.Errorf("缺少 'element' 参数")
@@ -155,7 +155,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"hover": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				if element == "" {
 					return "", nil, fmt.Errorf("缺少 'element' 参数")
@@ -177,7 +177,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"type": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				text := argString(args, "text")
 				if element == "" || text == "" {
@@ -191,7 +191,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"select_option": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				values := argStringSlice(args, "values")
 				if element == "" {
@@ -220,7 +220,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"fill_form": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				fields := []struct{ Target, Value string }{}
 				if arr, ok := args["fields"].([]any); ok {
 					for _, e := range arr {
@@ -242,7 +242,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"press_key": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				key := argString(args, "key")
 				ctxid, err := s.ensureContext(sessionName)
 				if err != nil {
@@ -258,7 +258,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"drag": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				start := argString(args, "startElement")
 				end := argString(args, "endElement")
 				ctxid, err := s.ensureContext(sessionName)
@@ -287,7 +287,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"drop": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				if element == "" {
 					return "", nil, fmt.Errorf("drop requires element")
@@ -311,7 +311,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"file_upload": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				files := argStringSlice(args, "paths")
 				if err := s.setFiles(sessionName, element, files); err != nil {
@@ -321,7 +321,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"find": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				text := strings.ToLower(argString(args, "text"))
 				regex := argString(args, "regex")
 				yamlText, _, _, err := s.ariaSnapshot(sessionName, false, 0)
@@ -359,7 +359,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"wait_for": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				if t := argInt(args, "time", 0); t > 0 {
 					time.Sleep(time.Duration(t) * time.Second)
 					return jsonString(map[string]any{"waited": t}), map[string]any{"waited": t}, nil
@@ -395,7 +395,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"expect_text": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				text := argString(args, "text")
 				if text == "" {
 					return "", nil, fmt.Errorf("缺少 'text' 参数")
@@ -415,7 +415,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"handle_dialog": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				accept := argBool(args, "accept", true)
 				promptText := argString(args, "promptText")
 				// Wait for the dialog to open (userPromptOpened event) and then
@@ -428,7 +428,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"evaluate": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				code := argString(args, "code")
 				if code == "" {
 					code = argString(args, "expression")
@@ -442,7 +442,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"tabs": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				action := argString(args, "action")
 				if action == "" {
 					action = argString(args, "tabAction")
@@ -505,13 +505,13 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"network_requests": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				reqs := s.networkLog(sessionName)
 				return jsonString(map[string]any{"requests": reqs}), map[string]any{"requests": reqs}, nil
 			},
 		},
 		"webfetch": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				url := argString(args, "url")
 				format := argString(args, "format")
 				timeout := argInt(args, "timeout", 30)
@@ -523,7 +523,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"reload": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				if err := s.reload(sessionName); err != nil {
 					return "", nil, err
 				}
@@ -532,7 +532,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"print_pdf": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				data, err := s.printPDF(sessionName)
 				if err != nil {
 					return "", nil, err
@@ -541,7 +541,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"cookies_get": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				cookies, err := s.getCookies(sessionName)
 				if err != nil {
 					return "", nil, err
@@ -550,7 +550,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"cookies_set": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				name := argString(args, "name")
 				value := argString(args, "value")
 				domain := argString(args, "domain")
@@ -568,7 +568,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"cookies_delete": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				name := argString(args, "name")
 				if err := s.deleteCookies(sessionName, name); err != nil {
 					return "", nil, err
@@ -577,7 +577,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"route": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				url := argString(args, "url")
 				mode := argString(args, "mode")
 				if url == "" || mode == "" {
@@ -606,7 +606,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"unroute": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				rid := argString(args, "routeId")
 				if rid == "" {
 					return "", nil, fmt.Errorf("unroute requires routeId")
@@ -618,13 +618,13 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"console_logs": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				entries := s.consoleLogs(sessionName)
 				return jsonString(map[string]any{"logs": entries}), map[string]any{"logs": entries}, nil
 			},
 		},
 		"emulate": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				ua := argString(args, "userAgent")
 				tz := argString(args, "timezone")
 				var lat, lon *float64
@@ -641,7 +641,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			},
 		},
 		"add_init_script": {
-			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string, emit func(string)) (string, map[string]any, error) {
+			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				script := argString(args, "script")
 				if script == "" {
 					return "", nil, fmt.Errorf("add_init_script requires script")
