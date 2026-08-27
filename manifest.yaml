@@ -3,7 +3,7 @@
 # (tools.go). Go rewrite of webdriver-extension: drives a Selenium standalone
 # node over WebDriver BiDi.
 
-id: webdriver
+id: browser
 version: 0.1.0
 
 tools:

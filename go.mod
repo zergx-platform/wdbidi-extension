@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	forgejo.develop.10.199.64.20.nip.io/rucoder/go-shared v0.1.0 // indirect
 	github.com/PuerkitoBio/goquery v1.9.2 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect

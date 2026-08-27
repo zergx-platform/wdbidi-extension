@@ -54,7 +54,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				url := argString(args, "url")
 				if url == "" {
-					return "", nil, fmt.Errorf("缺少 'url' 参数")
+					return "", nil, fmt.Errorf("missing %q argument", "url")
 				}
 				u, err := s.navigate(sessionName, url)
 				if err != nil {
@@ -133,7 +133,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				if element == "" {
-					return "", nil, fmt.Errorf("缺少 'element' 参数")
+					return "", nil, fmt.Errorf("missing %q argument", "element")
 				}
 				button := 0
 				switch argString(args, "button") {
@@ -158,7 +158,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				element := argString(args, "element")
 				if element == "" {
-					return "", nil, fmt.Errorf("缺少 'element' 参数")
+					return "", nil, fmt.Errorf("missing %q argument", "element")
 				}
 				ctxid, err := s.ensureContext(sessionName)
 				if err != nil {
@@ -181,7 +181,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 				element := argString(args, "element")
 				text := argString(args, "text")
 				if element == "" || text == "" {
-					return "", nil, fmt.Errorf("缺少 'element'/'text' 参数")
+					return "", nil, fmt.Errorf("missing %q or %q argument", "element", "text")
 				}
 				submit := argBool(args, "submit", false)
 				if err := s.typeInto(sessionName, element, text, submit); err != nil {
@@ -195,7 +195,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 				element := argString(args, "element")
 				values := argStringSlice(args, "values")
 				if element == "" {
-					return "", nil, fmt.Errorf("缺少 'element' 参数")
+					return "", nil, fmt.Errorf("missing %q argument", "element")
 				}
 				sel := toSelector(element)
 				if _, err := s.waitActionable(sessionName, element, true); err != nil {
@@ -398,7 +398,7 @@ func (s *server) handlers() map[string]abep.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (string, map[string]any, error) {
 				text := argString(args, "text")
 				if text == "" {
-					return "", nil, fmt.Errorf("缺少 'text' 参数")
+					return "", nil, fmt.Errorf("missing %q argument", "text")
 				}
 				// Playwright fly: verify_text_visible is an immediate assertion —
 				// no polling, no auto-wait. Report error when the text is not

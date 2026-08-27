@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"forgejo.develop.10.199.64.20.nip.io/rucoder/go-shared/env"
 	"net/http"
 	"net/url"
 	"os"
@@ -228,7 +229,7 @@ type server struct {
 
 func newServer() *server {
 	return &server{
-		seleniumURL:   envOr("RUCODER_SELENIUM_URL", "http://selenium.temp.svc.cluster.local:4444"),
+		seleniumURL:   env.Or("RUCODER_SELENIUM_URL", "http://selenium.temp.svc.cluster.local:4444"),
 		contexts:      map[string]string{},
 		ctx2ses:       map[string]string{},
 		netLog:        map[string][]netEntry{},
@@ -239,7 +240,7 @@ func newServer() *server {
 }
 
 func (s *server) browserName() string {
-	return envOr("RUCODER_BROWSER_NAME", "chrome")
+	return env.Or("RUCODER_BROWSER_NAME", "chrome")
 }
 
 func (s *server) actionTimeout() time.Duration {

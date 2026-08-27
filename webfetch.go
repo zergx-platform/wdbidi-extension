@@ -21,6 +21,10 @@ const (
 	webfetchUA             = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
 )
 
+// webfetchClient is shared across calls (connection reuse); per-call
+// deadlines are enforced via the request context.
+var webfetchClient = &http.Client{}
+
 func webfetch(rawURL, format string, timeoutSecs int) (map[string]any, error) {
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
 		return nil, fmt.Errorf("URL must start with http:// or https://")
@@ -39,8 +43,6 @@ func webfetch(rawURL, format string, timeoutSecs int) (map[string]any, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 
-	client := &http.Client{}
-
 	doFetch := func(ua string) (*http.Response, error) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 		if err != nil {
@@ -49,7 +51,7 @@ func webfetch(rawURL, format string, timeoutSecs int) (map[string]any, error) {
 		req.Header.Set("User-Agent", ua)
 		req.Header.Set("Accept", acceptHeader(format))
 		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
-		return client.Do(req)
+		return webfetchClient.Do(req)
 	}
 
 	resp, err := doFetch(webfetchUA)
