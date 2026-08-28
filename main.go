@@ -22,7 +22,7 @@ var ariaBundle string
 
 func main() {
 	log := slog.Default().With("svc", "wdbidi-extension")
-	natsURL := env.Or("NATS_URL", "nats://nats.develop.svc.cluster.local:4222")
+	natsURL := env.Or("NATS_URL", "nats://nats.zergx.svc.cluster.local:4222")
 
 	s := newServer()
 
