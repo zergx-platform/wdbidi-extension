@@ -18,8 +18,11 @@ func TestE2E(t *testing.T) {
 	sid := fmt.Sprintf("go-e2e-%d", time.Now().UnixNano())
 	h := s.handlers()
 	run := func(tool string, args map[string]any) (string, error) {
-		c, _, e := h[tool].Execute(nil, args, "cid", sid)
-		return c, e
+		res, e := h[tool].Execute(nil, args, "cid", sid)
+		if e != nil {
+			return "", e
+		}
+		return res.Content, e
 	}
 	fail := 0
 	step := func(name string, fn func() (string, error)) {

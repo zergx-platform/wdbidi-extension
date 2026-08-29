@@ -3,8 +3,7 @@ module forgejo.develop.10.199.64.20.nip.io/zergx/wdbidi-extension
 go 1.26
 
 require (
-	abep.dev/sdk v0.2.13
-	abep.dev/sdk/nats v0.2.6
+	forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go v0.1.0
 	forgejo.develop.10.199.64.20.nip.io/zergx/go-shared v0.1.1
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674

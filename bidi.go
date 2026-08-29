@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	abep "abep.dev/sdk"
+	"forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go/extension"
 	"github.com/gorilla/websocket"
 )
 
@@ -209,7 +209,7 @@ type promptEvent struct {
 }
 
 type server struct {
-	ext         *abep.Extension
+	ext         *extension.Extension
 	seleniumURL string
 
 	mu       sync.Mutex

@@ -10,8 +10,9 @@ import (
 	"log/slog"
 	"os"
 
-	abep "abep.dev/sdk"
-	natsbus "abep.dev/sdk/nats"
+	"forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go/extension"
+	"forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go/manifest"
+	natsbus "forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go/transport/nats"
 )
 
 //go:embed manifest.yaml
@@ -32,17 +33,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	manifest, err := abep.ParseManifest(manifestYaml)
+	m, err := manifest.ParseManifest(manifestYaml)
 	if err != nil {
 		log.Error("load manifest failed", "err", err)
 		os.Exit(1)
 	}
 
-	if err := abep.Serve(
-		nbus,
-		manifest.Config(s.handlers(), nil, nil),
-		abep.ServeOptions{
-			Run: func(runCtx context.Context, ext *abep.Extension) {
+	if err := extension.Serve(
+		extension.New(nbus, m.BuildConfig(manifest.Bindings{Handlers: s.handlers()})),
+		extension.ServeOptions{
+			Run: func(runCtx context.Context, ext *extension.Extension) {
 				s.ext = ext
 				log.Info("listening", "port", env.Or("ZERGX_PORT", "8080"), "nats", natsURL, "selenium", s.seleniumURL)
 			},
