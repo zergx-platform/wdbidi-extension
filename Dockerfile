@@ -21,6 +21,7 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 COPY *.go ./
+COPY internal/ internal/
 # manifest.yaml + ariaSnapshot.js are embedded via go:embed — no sidecar.
 COPY manifest.yaml ariaSnapshot.js ./
 RUN CGO_ENABLED=0 go build -o /out/wdbidi-extension .
