@@ -9,6 +9,8 @@ version: 0.1.0
 tools:
   - name: navigate
     description: Navigate the browser to a URL.
+    descriptions:
+      zh: "让浏览器导航到某个 URL。"
     input_schema:
       type: object
       properties:
@@ -16,21 +18,29 @@ tools:
       required: [url]
   - name: navigate_back
     description: Go back in the browser's history.
+    descriptions:
+      zh: "在浏览器历史中后退。"
     input_schema:
       type: object
       properties: {}
   - name: navigate_forward
     description: Go forward in the browser's history.
+    descriptions:
+      zh: "在浏览器历史中前进。"
     input_schema:
       type: object
       properties: {}
   - name: close
     description: Close the current browser page (and reset the session's browsing context).
+    descriptions:
+      zh: "关闭当前浏览器页面（并重置会话的浏览上下文）。"
     input_schema:
       type: object
       properties: {}
   - name: resize
     description: Resize the browser viewport.
+    descriptions:
+      zh: "调整浏览器视口大小。"
     input_schema:
       type: object
       properties:
@@ -38,6 +48,8 @@ tools:
         height: { type: integer }
   - name: snapshot
     description: Capture an accessibility snapshot of the current page (mode ai, with refs and boxes).
+    descriptions:
+      zh: "捕获当前页面的无障碍快照（模式 ai，含 ref 与 boxes）。"
     input_schema:
       type: object
       properties:
@@ -45,6 +57,8 @@ tools:
         boxes: { type: boolean }
   - name: screenshot
     description: Take a screenshot of the current page (or an element by ref). PNG only.
+    descriptions:
+      zh: "对当前页面截图（可选按元素或整页）。"
     input_schema:
       type: object
       properties:
@@ -52,6 +66,8 @@ tools:
         fullPage: { type: boolean }
   - name: click
     description: Click an element (by aria ref or CSS selector).
+    descriptions:
+      zh: "点击某个元素（按 aria ref 或 CSS 选择器）。"
     input_schema:
       type: object
       properties:
@@ -61,6 +77,8 @@ tools:
       required: [element]
   - name: hover
     description: Hover over an element (by aria ref or CSS selector).
+    descriptions:
+      zh: "悬停在某个元素上（按 aria ref 或 CSS 选择器）。"
     input_schema:
       type: object
       properties:
@@ -68,6 +86,8 @@ tools:
       required: [element]
   - name: type
     description: Type text into an editable element.
+    descriptions:
+      zh: "向可编辑元素输入文本。"
     input_schema:
       type: object
       properties:
@@ -78,6 +98,8 @@ tools:
       required: [element, text]
   - name: select_option
     description: Select options in a dropdown.
+    descriptions:
+      zh: "在下拉框中选择选项。"
     input_schema:
       type: object
       properties:
@@ -86,6 +108,8 @@ tools:
       required: [element, values]
   - name: fill_form
     description: Fill multiple form fields in one call.
+    descriptions:
+      zh: "一次调用填写多个表单字段。"
     input_schema:
       type: object
       properties:
@@ -100,6 +124,8 @@ tools:
       required: [fields]
   - name: press_key
     description: Press a keyboard key.
+    descriptions:
+      zh: "按下某个键盘按键。"
     input_schema:
       type: object
       properties:
@@ -107,6 +133,8 @@ tools:
       required: [key]
   - name: drag
     description: Drag from one element to another.
+    descriptions:
+      zh: "从某个元素拖到另一个元素。"
     input_schema:
       type: object
       properties:
@@ -115,6 +143,8 @@ tools:
       required: [startElement, endElement]
   - name: drop
     description: Drop files or MIME-typed data onto an element, as if dragged from outside the page. At least one of paths or data must be provided.
+    descriptions:
+      zh: "把文件或 MIME 类型的数据拖放到某元素上（如同从页面外部拖入）。paths 与 data 至少提供一个。"
     input_schema:
       type: object
       properties:
@@ -124,6 +154,8 @@ tools:
       required: [element]
   - name: file_upload
     description: Upload files to a file input (by aria ref or CSS selector).
+    descriptions:
+      zh: "向文件输入上载文件（按 aria ref 或 CSS 选择器）。"
     input_schema:
       type: object
       properties:
@@ -132,6 +164,8 @@ tools:
       required: [element, paths]
   - name: find
     description: Search the current page snapshot for text or a regex.
+    descriptions:
+      zh: "在当前页面快照中搜索文本或正则。"
     input_schema:
       type: object
       properties:
@@ -139,6 +173,8 @@ tools:
         regex: { type: string }
   - name: wait_for
     description: Wait for time (seconds), text, or a regex.
+    descriptions:
+      zh: "等待时间（秒）、文本或正则。"
     input_schema:
       type: object
       properties:
@@ -147,6 +183,8 @@ tools:
         regex: { type: string }
   - name: expect_text
     description: Verify that text is visible on the page right now. Fails (with an error) if the text is not found, like an assertion.
+    descriptions:
+      zh: "验证文本当前在页面上可见。若找不到则失败（报错），如同断言。"
     input_schema:
       type: object
       properties:
@@ -154,6 +192,8 @@ tools:
       required: [text]
   - name: handle_dialog
     description: Accept or dismiss the next browser dialog (alert/confirm/prompt).
+    descriptions:
+      zh: "接受或关闭下一个浏览器对话框（alert/confirm/prompt）。"
     input_schema:
       type: object
       properties:
@@ -161,6 +201,8 @@ tools:
         promptText: { type: string }
   - name: evaluate
     description: Evaluate a JavaScript expression in the page and return the JSON result.
+    descriptions:
+      zh: "在页面中执行 JavaScript 表达式并返回 JSON 结果。"
     input_schema:
       type: object
       properties:
@@ -168,6 +210,8 @@ tools:
       required: [code]
   - name: tabs
     description: List, create, close, or select browser tabs (tabs in the session context).
+    descriptions:
+      zh: "列出、创建、关闭或选择浏览器标签页（会话上下文中的标签）。"
     input_schema:
       type: object
       properties:
@@ -176,11 +220,15 @@ tools:
         url: { type: string }
   - name: network_requests
     description: List network requests made by the current page.
+    descriptions:
+      zh: "列出当前页面发起的网络请求。"
     input_schema:
       type: object
       properties: {}
   - name: webfetch
     description: Fetch content from an HTTP(S) URL and return it as text, markdown, or html. Defaults to markdown.
+    descriptions:
+      zh: "从 HTTP(S) URL 获取内容，以文本、markdown 或 html 返回；默认 markdown。"
     input_schema:
       type: object
       properties:
@@ -190,22 +238,30 @@ tools:
       required: [url]
   - name: reload
     description: Reload the current page.
+    descriptions:
+      zh: "重新加载当前页面。"
     input_schema:
       type: object
       properties: {}
   - name: print_pdf
     description: Print the current page as a PDF (returns base64).
+    descriptions:
+      zh: "将当前页面打印为 PDF（返回 base64）。"
     input_schema:
       type: object
       properties: {}
   - name: cookies_get
     description: Get cookies for the current page.
+    descriptions:
+      zh: "获取当前页面的 cookie。"
     input_schema:
       type: object
       properties:
         url: { type: string }
   - name: cookies_set
     description: Set a cookie for the current page.
+    descriptions:
+      zh: "为当前页面设置 cookie。"
     input_schema:
       type: object
       properties:
@@ -216,12 +272,16 @@ tools:
       required: [name, value, domain]
   - name: cookies_delete
     description: Delete cookies (by name, or all) for the current page.
+    descriptions:
+      zh: "删除 cookie（按名称，或全部）for 当前页面。"
     input_schema:
       type: object
       properties:
         name: { type: string }
   - name: route
     description: Intercept network requests matching a URL pattern. mode=abort blocks, mode=provide responds with status+body+contentType, mode=continue forwards. Returns a route id.
+    descriptions:
+      zh: "拦截与 URL 模式匹配的网络请求。mode=abort 阻断，mode=provide 以 status+body+contentType 响应，mode=continue 放行。返回 route id。"
     input_schema:
       type: object
       properties:
@@ -233,6 +293,8 @@ tools:
       required: [url, mode]
   - name: unroute
     description: Remove a network intercept by route id.
+    descriptions:
+      zh: "按 route id 移除网络拦截。"
     input_schema:
       type: object
       properties:
@@ -240,11 +302,15 @@ tools:
       required: [routeId]
   - name: console_logs
     description: Return captured browser console log entries for this session.
+    descriptions:
+      zh: "返回本会话捕获的浏览器控制台日志项。"
     input_schema:
       type: object
       properties: {}
   - name: emulate
     description: Override browser emulation settings (userAgent, timezone, geolocation).
+    descriptions:
+      zh: "覆盖浏览器仿真设置（userAgent、时区、地理位置）。"
     input_schema:
       type: object
       properties:
@@ -254,6 +320,8 @@ tools:
         longitude: { type: number }
   - name: add_init_script
     description: Add a script that runs on every subsequent navigation (before page scripts).
+    descriptions:
+      zh: "添加一个在后续每次导航时（页面脚本之前）运行的脚本。"
     input_schema:
       type: object
       properties:

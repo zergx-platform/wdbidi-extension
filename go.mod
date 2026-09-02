@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
-	github.com/abcp-sdk/abc-protocol-go v1.0.3
+	github.com/abcp-sdk/abc-protocol-go v1.0.6
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	golang.org/x/net v0.51.0
 )
