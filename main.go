@@ -1,6 +1,6 @@
 // Package main is wdbidi-extension: the Go rewrite of webdriver-extension.
 // It drives a Selenium standalone node over WebDriver BiDi and exposes the 25
-// browser tools to the agent over NATS (abep protocol, id "browser").
+// browser tools to the agent over NATS (abc protocol, id "browser").
 package main
 
 import (
