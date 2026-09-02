@@ -6,7 +6,7 @@ package main
 import (
 	"context"
 	_ "embed"
-	"forgejo.develop.10.199.64.20.nip.io/zergx/go-shared/env"
+	"forgejo.develop.10.199.64.20.nip.io/zergx/wdbidi-extension/internal/env"
 	"log/slog"
 	"os"
 
