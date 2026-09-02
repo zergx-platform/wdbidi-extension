@@ -3,7 +3,7 @@
 # driving a Selenium standalone node over WebDriver BiDi (abep id "webdriver").
 # Base images default to the in-cluster artifact registry.
 ARG REGISTRY=jj-lab.temp.svc.cluster.local
-FROM ${REGISTRY}/golang:1.26-alpine AS build
+FROM ${REGISTRY}/library/golang:1.26-alpine AS build
 ARG HTTP_PROXY=http://mihomo.develop.svc.cluster.local:7890
 ARG HTTPS_PROXY=http://mihomo.develop.svc.cluster.local:7890
 ENV HTTP_PROXY=${HTTP_PROXY} \
@@ -28,7 +28,7 @@ COPY *.go ./
 COPY manifest.yaml ariaSnapshot.js ./
 RUN CGO_ENABLED=0 go build -o /out/wdbidi-extension .
 
-FROM ${REGISTRY}/alpine:3.24
+FROM ${REGISTRY}/library/alpine:3.24
 RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories \
     && apk add --no-cache ca-certificates
 COPY --from=build /out/wdbidi-extension /usr/local/bin/wdbidi-extension
