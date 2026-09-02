@@ -6,7 +6,6 @@ package main
 import (
 	"context"
 	_ "embed"
-	"github.com/zergx-platform/wdbidi-extension/internal/env"
 	"log/slog"
 	"os"
 
@@ -23,7 +22,7 @@ var ariaBundle string
 
 func main() {
 	log := slog.Default().With("svc", "wdbidi-extension")
-	natsURL := env.Or("NATS_URL", "nats://nats.zergx.svc.cluster.local:4222")
+	natsURL := envOr("NATS_URL", "nats://nats.zergx.svc.cluster.local:4222")
 
 	s := newServer()
 
@@ -44,7 +43,7 @@ func main() {
 		extension.ServeOptions{
 			Run: func(runCtx context.Context, ext *extension.Extension) {
 				s.ext = ext
-				log.Info("listening", "port", env.Or("ZERGX_PORT", "8080"), "nats", natsURL, "selenium", s.seleniumURL)
+				log.Info("listening", "port", envOr("ZERGX_PORT", "8080"), "nats", natsURL, "selenium", s.seleniumURL)
 			},
 		},
 	); err != nil {

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/zergx-platform/wdbidi-extension/internal/env"
 	"net/http"
 	"net/url"
 	"os"
@@ -229,7 +228,7 @@ type server struct {
 
 func newServer() *server {
 	return &server{
-		seleniumURL:   env.Or("ZERGX_SELENIUM_URL", "http://selenium.temp.svc.cluster.local:4444"),
+		seleniumURL:   envOr("ZERGX_SELENIUM_URL", "http://selenium.temp.svc.cluster.local:4444"),
 		contexts:      map[string]string{},
 		ctx2ses:       map[string]string{},
 		netLog:        map[string][]netEntry{},
@@ -240,7 +239,7 @@ func newServer() *server {
 }
 
 func (s *server) browserName() string {
-	return env.Or("ZERGX_BROWSER_NAME", "chrome")
+	return envOr("ZERGX_BROWSER_NAME", "chrome")
 }
 
 func (s *server) actionTimeout() time.Duration {
