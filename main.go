@@ -10,9 +10,9 @@ import (
 	"log/slog"
 	"os"
 
-	"forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go/extension"
-	"forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go/manifest"
-	natsbus "forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go/transport/nats"
+	"github.com/abcp-sdk/abc-protocol-go/extension"
+	"github.com/abcp-sdk/abc-protocol-go/manifest"
+	natsbus "github.com/abcp-sdk/abc-protocol-go/transport/nats"
 )
 
 //go:embed manifest.yaml
