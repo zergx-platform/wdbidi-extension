@@ -1,11 +1,9 @@
-forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go v1.0.1 h1:LgMuS8XF5sW1xGdH+z3oDQ42Kkervd1dLIdUddDE+J4=
-forgejo.develop.10.199.64.20.nip.io/abc-protocol/sdk-go v1.0.1/go.mod h1:O3QPxUQfGXOJzO5pjLTu10Qj7A+U/rfrnP0nkGTqy0I=
 github.com/JohannesKaufmann/html-to-markdown v1.6.0 h1:04VXMiE50YYfCfLboJCLcgqF5x+rHJnb1ssNmqpLH/k=
 github.com/JohannesKaufmann/html-to-markdown v1.6.0/go.mod h1:NUI78lGg/a7vpEJTz/0uOcYMaibytE4BUOQS8k78yPQ=
 github.com/PuerkitoBio/goquery v1.9.2 h1:4/wZksC3KgkQw7SQgkKotmKljk0M6V8TUvA8Wb4yPeE=
 github.com/PuerkitoBio/goquery v1.9.2/go.mod h1:GHPCaP0ODyyxqcNoFGYlAprUFH81NuRPd0GX3Zu2Mvk=
-github.com/abcp-sdk/abc-protocol-go v1.0.2 h1:zrzd2agU83954GZ7uG++JzPOLQcdI4mFFCqsUrn2B/g=
-github.com/abcp-sdk/abc-protocol-go v1.0.2/go.mod h1:Pj40eYsDYx1n8Gf2BiQU7Rf9IESUggv4JIaXJf9u01o=
+github.com/abcp-sdk/abc-protocol-go v1.0.3 h1:c0IdO1ekP6pZeTsLA3Bzsgn2kWPZjLlLL4cYiz6+4O8=
+github.com/abcp-sdk/abc-protocol-go v1.0.3/go.mod h1:Pj40eYsDYx1n8Gf2BiQU7Rf9IESUggv4JIaXJf9u01o=
 github.com/andybalholm/cascadia v1.3.2 h1:3Xi6Dw5lHF15JtdcmAHD3i1+T8plmv7BQ/nsViSLyss=
 github.com/andybalholm/cascadia v1.3.2/go.mod h1:7gtRlve5FxPPgIgX36uWBX58OdBsSS6lUvCFb+h7KvU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

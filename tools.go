@@ -125,8 +125,15 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				if err != nil {
 					return extension.ToolResultData{}, err
 				}
-				content := jsonString(map[string]any{"screenshot": "data:image/png;base64," + data})
-				return extension.ToolResultData{Content: content, Data: map[string]any{"type": "png", "bytes": len(data) * 3 / 4}}, nil
+				raw, derr := decodeB64(data)
+				if derr != nil {
+					return extension.ToolResultData{}, derr
+				}
+				ref, ierr := ingestByteArray(ctx, "screenshot.png", "image/png", raw)
+				if ierr != nil {
+					return extension.ToolResultData{}, ierr
+				}
+				return extension.ToolResultData{Content: ref, Data: map[string]any{"type": "png", "bytes": len(raw)}}, nil
 			},
 		},
 		"click": {
@@ -537,7 +544,15 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				if err != nil {
 					return extension.ToolResultData{}, err
 				}
-				return extension.ToolResultData{Content: jsonString(map[string]any{"pdf": "data:application/pdf;base64," + data}), Data: map[string]any{"bytes": len(data) * 3 / 4}}, nil
+				raw, derr := decodeB64(data)
+				if derr != nil {
+					return extension.ToolResultData{}, derr
+				}
+				ref, ierr := ingestByteArray(ctx, "page.pdf", "application/pdf", raw)
+				if ierr != nil {
+					return extension.ToolResultData{}, ierr
+				}
+				return extension.ToolResultData{Content: ref, Data: map[string]any{"bytes": len(raw)}}, nil
 			},
 		},
 		"cookies_get": {
