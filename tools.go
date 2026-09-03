@@ -477,7 +477,14 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 					return extension.ToolResultData{Content: jsonString(map[string]any{"tabs": tabs}), Data: map[string]any{}}, nil
 				case "new":
 					url := argString(args, "url")
-					res, err := s.bidiCall("browsingContext.create", map[string]any{"type": "tab"})
+					// New tab belongs to the session's userContext (storage
+					// isolation), if one has been created.
+					uc := s.userContextForSession(sessionName)
+					params := map[string]any{"type": "tab"}
+					if uc != "" {
+						params["userContext"] = uc
+					}
+					res, err := s.bidiCall("browsingContext.create", params)
 					if err != nil {
 						return extension.ToolResultData{}, err
 					}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -215,6 +216,8 @@ type server struct {
 	driver   *driverSession
 	contexts map[string]string // agent sessionName -> browsing context id
 	ctx2ses  map[string]string // browsing context id -> agent sessionName
+	userCtxs map[string]string // agent sessionName -> browser user context id
+	lastSeen map[string]int64  // agent sessionName -> unix seconds of last activity
 
 	netMu         sync.Mutex
 	netLog        map[string][]netEntry // agent sessionName -> captured requests
@@ -231,6 +234,8 @@ func newServer() *server {
 		seleniumURL:   envOr("ZERGX_SELENIUM_URL", "http://selenium.temp.svc.cluster.local:4444"),
 		contexts:      map[string]string{},
 		ctx2ses:       map[string]string{},
+		userCtxs:      map[string]string{},
+		lastSeen:      map[string]int64{},
 		netLog:        map[string][]netEntry{},
 		promptWaiters: map[string][]chan promptEvent{},
 		consoles:      map[string][]consoleEntry{},
@@ -412,8 +417,12 @@ func (s *server) subscribeEvents(d *driverSession) error {
 	return err
 }
 
-// ensureContext lazily creates the agent session's browsing context (tab).
+// ensureContext lazily creates the agent session's browsing context (tab)
+// inside a session-scoped userContext. A per-session userContext isolates
+// cookie / localStorage / browser state so two sessions never share storage,
+// while reusing one browser process (driver) for cheapness.
 func (s *server) ensureContext(sessionName string) (string, error) {
+	s.touch(sessionName)
 	s.mu.Lock()
 	if id, ok := s.contexts[sessionName]; ok {
 		s.mu.Unlock()
@@ -425,7 +434,19 @@ func (s *server) ensureContext(sessionName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	res, err := d.conn.Call("browsingContext.create", map[string]any{"type": "tab"})
+
+	// Create the session-scoped userContext once (isolates storage), then a
+	// tab inside it. Reuse if we already made one for this session.
+	ucID, err := s.userContextOf(sessionName, d)
+	if err != nil {
+		return "", err
+	}
+
+	createParams := map[string]any{"type": "tab"}
+	if ucID != "" {
+		createParams["userContext"] = ucID
+	}
+	res, err := d.conn.Call("browsingContext.create", createParams)
 	if err != nil {
 		return "", err
 	}
@@ -445,13 +466,112 @@ func (s *server) ensureContext(sessionName string) (string, error) {
 	return out.Context, nil
 }
 
-func (s *server) resetContext(sessionName string) {
+// userContextOf returns (and lazily creates) the per-session userContext id.
+func (s *server) userContextOf(sessionName string, d *driverSession) (string, error) {
 	s.mu.Lock()
-	if cid, ok := s.contexts[sessionName]; ok {
-		delete(s.contexts, sessionName)
-		delete(s.ctx2ses, cid)
+	if id, ok := s.userCtxs[sessionName]; ok {
+		s.mu.Unlock()
+		return id, nil
 	}
 	s.mu.Unlock()
+
+	req := map[string]any{"type": "tab"}
+	id := req[`type`]
+	_ = id
+	raw, err := d.conn.Call("browser.createUserContext", map[string]any{})
+	if err != nil {
+		// Older Selenium/Chromium without userContext support: degrade to the
+		// shared default (tab-only isolation) rather than break all tools.
+		return "", nil
+	}
+	var out struct {
+		UserContext string `json:"userContext"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil || out.UserContext == "" {
+		return "", nil
+	}
+	s.mu.Lock()
+	s.userCtxs[sessionName] = out.UserContext
+	s.mu.Unlock()
+	return out.UserContext, nil
+}
+
+// userContextForSession returns the per-session userContext id for creating
+// extra tabs inside the same storage partition (or "" if none yet).
+func (s *server) userContextForSession(sessionName string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.userCtxs[sessionName]
+}
+
+// touch records last activity so the idle reaper can reclaim a session.
+func (s *server) touch(sessionName string) {
+	if sessionName == "" {
+		return
+	}
+	s.mu.Lock()
+	s.lastSeen[sessionName] = time.Now().Unix()
+	s.mu.Unlock()
+}
+
+// idleReaper periodically closes browser contexts (and their userContext) for
+// sessions that have had no tool activity within the configured timeout. It
+// keeps the single browser process from accumulating zombie tabs across a long
+// workload. Stops when ctx is cancelled.
+func (s *server) idleReaper(ctx context.Context) {
+	idle := time.Duration(envInt("ZERGX_BROWSER_IDLE_SECS", 1800)) * time.Second
+	interval := time.Duration(envInt("ZERGX_BROWSER_REAP_INTERVAL_SECS", 300)) * time.Second
+	if interval <= 0 {
+		interval = idle
+	}
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-t.C:
+			cutoff := now.Add(-idle).Unix()
+			var stale []string
+			s.mu.Lock()
+			for sid, ts := range s.lastSeen {
+				if ts < cutoff {
+					stale = append(stale, sid)
+				}
+			}
+			s.mu.Unlock()
+			for _, sid := range stale {
+				s.resetContext(sid)
+			}
+		}
+	}
+}
+
+// resetContext drops a session's tab + userContext and all reverse mappings.
+func (s *server) resetContext(sessionName string) {
+	s.mu.Lock()
+	cid, ctxOK := s.contexts[sessionName]
+	uc := s.userCtxs[sessionName]
+	delete(s.contexts, sessionName)
+	if ctxOK {
+		delete(s.ctx2ses, cid)
+	}
+	delete(s.userCtxs, sessionName)
+	delete(s.lastSeen, sessionName)
+	d := s.driver
+	s.mu.Unlock()
+
+	if d == nil {
+		return
+	}
+	// Close the tab if present (best-effort; can 404 mid-teardown).
+	if ctxOK {
+		_, _ = d.conn.Call("browsingContext.close", map[string]any{"context": cid})
+	}
+	// Delete the userContext (reclaims its storage) — only if it exists.
+	if uc != "" {
+		_, _ = d.conn.Call("browser.deleteUserContext", map[string]any{"userContext": uc})
+	}
 }
 
 func (s *server) currentContext(sessionName string) (string, error) {

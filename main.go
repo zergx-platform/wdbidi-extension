@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 
+	abcprotocol "github.com/abcp-sdk/abc-protocol-go"
 	"github.com/abcp-sdk/abc-protocol-go/extension"
 	"github.com/abcp-sdk/abc-protocol-go/manifest"
 	natsbus "github.com/abcp-sdk/abc-protocol-go/transport/nats"
@@ -39,11 +40,23 @@ func main() {
 	}
 
 	if err := extension.Serve(
-		extension.New(nbus, m.BuildConfig(manifest.Bindings{Handlers: s.handlers()})),
+		extension.New(nbus, m.BuildConfig(manifest.Bindings{
+			Handlers: s.handlers(),
+			OnLifecycle: func(ctx context.Context, ev abcprotocol.LifecycleEvent) error {
+				if string(ev.Kind) == "deleted" {
+					// Reclaim the session's tab + userContext on session delete.
+					s.resetContext(ev.SessionName)
+				}
+				return nil
+			},
+		})),
 		extension.ServeOptions{
 			Run: func(runCtx context.Context, ext *extension.Extension) {
 				s.ext = ext
 				log.Info("listening", "port", envOr("ZERGX_PORT", "8080"), "nats", natsURL, "selenium", s.seleniumURL)
+				// Reclaim idle sessions' browser contexts (tab + userContext)
+				// so long-running instances do not accumulate zombie tabs.
+				go s.idleReaper(runCtx)
 			},
 		},
 	); err != nil {
