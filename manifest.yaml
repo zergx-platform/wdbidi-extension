@@ -10,320 +10,570 @@ tools:
   - name: navigate
     description: Navigate the browser to a URL.
     descriptions:
-      zh: "让浏览器导航到某个 URL。"
+      zh: 让浏览器导航到某个 URL。
     input_schema:
       type: object
       properties:
-        url: { type: string }
+        url:
+          type: string
+          description: URL to navigate to, fetch, match, or scope the cookie to.
+          descriptions:
+            zh: 要访问、匹配或作为 Cookie 作用域的 URL。
       required: [url]
   - name: navigate_back
     description: Go back in the browser's history.
     descriptions:
-      zh: "在浏览器历史中后退。"
+      zh: 在浏览器历史中后退。
     input_schema:
       type: object
       properties: {}
   - name: navigate_forward
     description: Go forward in the browser's history.
     descriptions:
-      zh: "在浏览器历史中前进。"
+      zh: 在浏览器历史中前进。
     input_schema:
       type: object
       properties: {}
   - name: close
     description: Close the current browser page (and reset the session's browsing context).
     descriptions:
-      zh: "关闭当前浏览器页面（并重置会话的浏览上下文）。"
+      zh: 关闭当前浏览器页面（并重置会话的浏览上下文）。
     input_schema:
       type: object
       properties: {}
   - name: resize
     description: Resize the browser viewport.
     descriptions:
-      zh: "调整浏览器视口大小。"
+      zh: 调整浏览器视口大小。
     input_schema:
       type: object
       properties:
-        width: { type: integer }
-        height: { type: integer }
+        width:
+          type: integer
+          description: Viewport width in pixels.
+          descriptions:
+            zh: 视口宽度（像素）。
+        height:
+          type: integer
+          description: Viewport height in pixels.
+          descriptions:
+            zh: 视口高度（像素）。
   - name: snapshot
     description: Capture an accessibility snapshot of the current page (mode ai, with refs and boxes).
     descriptions:
-      zh: "捕获当前页面的无障碍快照（模式 ai，含 ref 与 boxes）。"
+      zh: 捕获当前页面的无障碍快照（模式 ai，含 ref 与 boxes）。
     input_schema:
       type: object
       properties:
-        depth: { type: integer }
-        boxes: { type: boolean }
+        depth:
+          type: integer
+          description: Snapshot depth to expand (higher = more detail; 0 = default).
+          descriptions:
+            zh: 快照展开深度（越大越详细；0 = 默认）。
+        boxes:
+          type: boolean
+          description: Include accessible bounding boxes for interactive elements.
+          descriptions:
+            zh: 是否包含可交互元素的可访问包围盒。
   - name: screenshot
     description: Take a screenshot of the current page (or an element by ref). PNG only.
     descriptions:
-      zh: "对当前页面截图（可选按元素或整页）。"
+      zh: 对当前页面截图（可选按元素或整页）。
     input_schema:
       type: object
       properties:
-        element: { type: string }
-        fullPage: { type: boolean }
+        element:
+          type: string
+          description: Target element (by aria ref or CSS selector).
+          descriptions:
+            zh: 目标元素（按 aria ref 或 CSS 选择器）。
+        fullPage:
+          type: boolean
+          description: Capture the full scrollable page (not just the viewport).
+          descriptions:
+            zh: 是否截取整页可滚动内容（而非仅视口）。
   - name: click
     description: Click an element (by aria ref or CSS selector).
     descriptions:
-      zh: "点击某个元素（按 aria ref 或 CSS 选择器）。"
+      zh: 点击某个元素（按 aria ref 或 CSS 选择器）。
     input_schema:
       type: object
       properties:
-        element: { type: string }
-        button: { type: string, enum: [left, right, middle] }
-        doubleClick: { type: boolean }
+        element:
+          type: string
+          description: Target element (by aria ref or CSS selector).
+          descriptions:
+            zh: 目标元素（按 aria ref 或 CSS 选择器）。
+        button:
+          type: string
+          enum: [left, right, middle]
+          description: Mouse button (default left).
+          descriptions:
+            zh: 鼠标按键（默认 left）。
+        doubleClick:
+          type: boolean
+          description: Perform a double-click instead of a single click.
+          descriptions:
+            zh: 是否改为双击而非单击。
       required: [element]
   - name: hover
     description: Hover over an element (by aria ref or CSS selector).
     descriptions:
-      zh: "悬停在某个元素上（按 aria ref 或 CSS 选择器）。"
+      zh: 悬停在某个元素上（按 aria ref 或 CSS 选择器）。
     input_schema:
       type: object
       properties:
-        element: { type: string }
+        element:
+          type: string
+          description: Target element (by aria ref or CSS selector).
+          descriptions:
+            zh: 目标元素（按 aria ref 或 CSS 选择器）。
       required: [element]
   - name: type
     description: Type text into an editable element.
     descriptions:
-      zh: "向可编辑元素输入文本。"
+      zh: 向可编辑元素输入文本。
     input_schema:
       type: object
       properties:
-        element: { type: string }
-        text: { type: string }
-        slowly: { type: boolean }
-        submit: { type: boolean }
+        element:
+          type: string
+          description: Target element (by aria ref or CSS selector).
+          descriptions:
+            zh: 目标元素（按 aria ref 或 CSS 选择器）。
+        text:
+          type: string
+          description: Text to type, search for, or expect.
+          descriptions:
+            zh: 要输入、搜索或校验的文本。
+        slowly:
+          type: boolean
+          description: Type characters with a delay (more realistic).
+          descriptions:
+            zh: 是否延迟逐个输入字符（更接近真实输入）。
+        submit:
+          type: boolean
+          description: Press Enter / submit the form after typing.
+          descriptions:
+            zh: 输入后是否按回车 / 提交表单。
       required: [element, text]
   - name: select_option
     description: Select options in a dropdown.
     descriptions:
-      zh: "在下拉框中选择选项。"
+      zh: 在下拉框中选择选项。
     input_schema:
       type: object
       properties:
-        element: { type: string }
-        values: { type: array, items: { type: string } }
+        element:
+          type: string
+          description: Target element (by aria ref or CSS selector).
+          descriptions:
+            zh: 目标元素（按 aria ref 或 CSS 选择器）。
+        values:
+          type: array
+          description: Option values to select.
+          descriptions:
+            zh: 要选中的选项值。
+          items: { type: string }
       required: [element, values]
   - name: fill_form
     description: Fill multiple form fields in one call.
     descriptions:
-      zh: "一次调用填写多个表单字段。"
+      zh: 一次调用填写多个表单字段。
     input_schema:
       type: object
       properties:
         fields:
           type: array
+          description: Form fields to fill (target + value pairs).
+          descriptions:
+            zh: 要填写的表单字段（target + value 对）。
           items:
             type: object
+            description: One form field to fill.
+            descriptions:
+              zh: 一个要填写的表单字段。
             properties:
-              target: { type: string }
-              value: { type: string }
+              target:
+                type: string
+                description: Field target (aria ref, name, or label).
+                descriptions:
+                  zh: 字段目标（aria ref、name 或 label）。
+              value:
+                type: string
+                description: Value to set for the field.
+                descriptions:
+                  zh: 该字段要设置的值。
             required: [target, value]
       required: [fields]
   - name: press_key
     description: Press a keyboard key.
     descriptions:
-      zh: "按下某个键盘按键。"
+      zh: 按下某个键盘按键。
     input_schema:
       type: object
       properties:
-        key: { type: string }
+        key:
+          type: string
+          description: Key to press (e.g. Enter, Tab, 'a', F5).
+          descriptions:
+            zh: 要按下的键（如 Enter、Tab、'a'、F5）。
       required: [key]
   - name: drag
     description: Drag from one element to another.
     descriptions:
-      zh: "从某个元素拖到另一个元素。"
+      zh: 从某个元素拖到另一个元素。
     input_schema:
       type: object
       properties:
-        startElement: { type: string }
-        endElement: { type: string }
+        startElement:
+          type: string
+          description: Source element to drag from.
+          descriptions:
+            zh: 拖动的起始元素。
+        endElement:
+          type: string
+          description: Destination element to drop onto.
+          descriptions:
+            zh: 拖放的目标元素。
       required: [startElement, endElement]
   - name: drop
     description: Drop files or MIME-typed data onto an element, as if dragged from outside the page. At least one of paths or data must be provided.
     descriptions:
-      zh: "把文件或 MIME 类型的数据拖放到某元素上（如同从页面外部拖入）。paths 与 data 至少提供一个。"
+      zh: 把文件或 MIME 类型的数据拖放到某元素上（如同从页面外部拖入）。paths 与 data 至少提供一个。
     input_schema:
       type: object
       properties:
-        element: { type: string }
-        paths: { type: array, items: { type: string } }
-        data: { type: object, additionalProperties: { type: string } }
+        element:
+          type: string
+          description: Target element (by aria ref or CSS selector).
+          descriptions:
+            zh: 目标元素（按 aria ref 或 CSS 选择器）。
+        paths:
+          type: array
+          description: Absolute file paths to drop / upload.
+          descriptions:
+            zh: 要拖放 / 上传的绝对文件路径。
+          items: { type: string }
+        data:
+          type: object
+          description: MIME-typed data payload (mime -> string content).
+          descriptions:
+            zh: MIME 类型的数据负载（mime -> 字符串内容）。
+          additionalProperties: { type: string }
       required: [element]
   - name: file_upload
     description: Upload files to a file input (by aria ref or CSS selector).
     descriptions:
-      zh: "向文件输入上载文件（按 aria ref 或 CSS 选择器）。"
+      zh: 向文件输入上载文件（按 aria ref 或 CSS 选择器）。
     input_schema:
       type: object
       properties:
-        element: { type: string }
-        paths: { type: array, items: { type: string } }
+        element:
+          type: string
+          description: Target element (by aria ref or CSS selector).
+          descriptions:
+            zh: 目标元素（按 aria ref 或 CSS 选择器）。
+        paths:
+          type: array
+          description: Absolute file paths to drop / upload.
+          descriptions:
+            zh: 要拖放 / 上传的绝对文件路径。
+          items: { type: string }
       required: [element, paths]
   - name: find
     description: Search the current page snapshot for text or a regex.
     descriptions:
-      zh: "在当前页面快照中搜索文本或正则。"
+      zh: 在当前页面快照中搜索文本或正则。
     input_schema:
       type: object
       properties:
-        text: { type: string }
-        regex: { type: string }
+        text:
+          type: string
+          description: Text to type, search for, or expect.
+          descriptions:
+            zh: 要输入、搜索或校验的文本。
+        regex:
+          type: string
+          description: Regular expression to match against the page text.
+          descriptions:
+            zh: 用于匹配页面文本的正则表达式。
   - name: wait_for
     description: Wait for time (seconds), text, or a regex.
     descriptions:
-      zh: "等待时间（秒）、文本或正则。"
+      zh: 等待时间（秒）、文本或正则。
     input_schema:
       type: object
       properties:
-        time: { type: number }
-        text: { type: string }
-        regex: { type: string }
+        time:
+          type: number
+          description: Seconds to wait.
+          descriptions:
+            zh: 等待的秒数。
+        text:
+          type: string
+          description: Text to type, search for, or expect.
+          descriptions:
+            zh: 要输入、搜索或校验的文本。
+        regex:
+          type: string
+          description: Regular expression to match against the page text.
+          descriptions:
+            zh: 用于匹配页面文本的正则表达式。
   - name: expect_text
     description: Verify that text is visible on the page right now. Fails (with an error) if the text is not found, like an assertion.
     descriptions:
-      zh: "验证文本当前在页面上可见。若找不到则失败（报错），如同断言。"
+      zh: 验证文本当前在页面上可见。若找不到则失败（报错），如同断言。
     input_schema:
       type: object
       properties:
-        text: { type: string }
+        text:
+          type: string
+          description: Text to type, search for, or expect.
+          descriptions:
+            zh: 要输入、搜索或校验的文本。
       required: [text]
   - name: handle_dialog
     description: Accept or dismiss the next browser dialog (alert/confirm/prompt).
     descriptions:
-      zh: "接受或关闭下一个浏览器对话框（alert/confirm/prompt）。"
+      zh: 接受或关闭下一个浏览器对话框（alert/confirm/prompt）。
     input_schema:
       type: object
       properties:
-        accept: { type: boolean }
-        promptText: { type: string }
+        accept:
+          type: boolean
+          description: Accept the dialog (true) or dismiss it (false).
+          descriptions:
+            zh: 接受对话（true）或关闭（false）。
+        promptText:
+          type: string
+          description: Text to type into the prompt field (if the dialog is a prompt).
+          descriptions:
+            zh: 输入到 prompt 输入框的文本（当对话为 prompt 时）。
   - name: evaluate
     description: Evaluate a JavaScript expression in the page and return the JSON result.
     descriptions:
-      zh: "在页面中执行 JavaScript 表达式并返回 JSON 结果。"
+      zh: 在页面中执行 JavaScript 表达式并返回 JSON 结果。
     input_schema:
       type: object
       properties:
-        code: { type: string }
+        code:
+          type: string
+          description: JavaScript expression to evaluate.
+          descriptions:
+            zh: 要执行的 JavaScript 表达式。
       required: [code]
   - name: tabs
     description: List, create, close, or select browser tabs (tabs in the session context).
     descriptions:
-      zh: "列出、创建、关闭或选择浏览器标签页（会话上下文中的标签）。"
+      zh: 列出、创建、关闭或选择浏览器标签页（会话上下文中的标签）。
     input_schema:
       type: object
       properties:
-        action: { type: string, enum: [list, new, close, select] }
-        index: { type: integer }
-        url: { type: string }
+        action:
+          type: string
+          enum: [list, new, close, select]
+          description: Tab action.
+          descriptions:
+            zh: 标签页动作。
+        index:
+          type: integer
+          description: Tab index (1-based) for close / select.
+          descriptions:
+            zh: 标签页索引（从 1 开始），用于 close / select。
+        url:
+          type: string
+          description: URL to navigate to, fetch, match, or scope the cookie to.
+          descriptions:
+            zh: 要访问、匹配或作为 Cookie 作用域的 URL。
   - name: network_requests
     description: List network requests made by the current page.
     descriptions:
-      zh: "列出当前页面发起的网络请求。"
+      zh: 列出当前页面发起的网络请求。
     input_schema:
       type: object
       properties: {}
   - name: webfetch
     description: Fetch content from an HTTP(S) URL and return it as text, markdown, or html. Defaults to markdown.
     descriptions:
-      zh: "从 HTTP(S) URL 获取内容，以文本、markdown 或 html 返回；默认 markdown。"
+      zh: 从 HTTP(S) URL 获取内容，以文本、markdown 或 html 返回；默认 markdown。
     input_schema:
       type: object
       properties:
-        url: { type: string }
-        format: { type: string, enum: [text, markdown, html] }
-        timeout: { type: integer }
+        url:
+          type: string
+          description: URL to navigate to, fetch, match, or scope the cookie to.
+          descriptions:
+            zh: 要访问、匹配或作为 Cookie 作用域的 URL。
+        format:
+          type: string
+          enum: [text, markdown, html]
+          description: Response format (default text).
+          descriptions:
+            zh: 响应格式（默认 text）。
+        timeout:
+          type: integer
+          description: Request timeout in milliseconds (default 10000).
+          descriptions:
+            zh: 请求超时毫秒数（默认 10000）。
       required: [url]
   - name: reload
     description: Reload the current page.
     descriptions:
-      zh: "重新加载当前页面。"
+      zh: 重新加载当前页面。
     input_schema:
       type: object
       properties: {}
   - name: print_pdf
     description: Print the current page as a PDF (returns base64).
     descriptions:
-      zh: "将当前页面打印为 PDF（返回 base64）。"
+      zh: 将当前页面打印为 PDF（返回 base64）。
     input_schema:
       type: object
       properties: {}
   - name: cookies_get
     description: Get cookies for the current page.
     descriptions:
-      zh: "获取当前页面的 cookie。"
+      zh: 获取当前页面的 cookie。
     input_schema:
       type: object
       properties:
-        url: { type: string }
+        url:
+          type: string
+          description: URL to navigate to, fetch, match, or scope the cookie to.
+          descriptions:
+            zh: 要访问、匹配或作为 Cookie 作用域的 URL。
   - name: cookies_set
     description: Set a cookie for the current page.
     descriptions:
-      zh: "为当前页面设置 cookie。"
+      zh: 为当前页面设置 cookie。
     input_schema:
       type: object
       properties:
-        name: { type: string }
-        value: { type: string }
-        domain: { type: string }
-        path: { type: string }
+        name:
+          type: string
+          description: Cookie / tab name.
+          descriptions:
+            zh: Cookie 名称。
+        value:
+          type: string
+          description: Cookie value.
+          descriptions:
+            zh: Cookie 值。
+        domain:
+          type: string
+          description: Cookie domain (defaults to the current page domain).
+          descriptions:
+            zh: Cookie 域（默认为当前页面域）。
+        path:
+          type: string
+          description: Cookie path (defaults to /).
+          descriptions:
+            zh: Cookie 路径（默认为 /）。
       required: [name, value, domain]
   - name: cookies_delete
     description: Delete cookies (by name, or all) for the current page.
     descriptions:
-      zh: "删除 cookie（按名称，或全部）for 当前页面。"
+      zh: 删除 cookie（按名称，或全部）for 当前页面。
     input_schema:
       type: object
       properties:
-        name: { type: string }
+        name:
+          type: string
+          description: Cookie / tab name.
+          descriptions:
+            zh: Cookie 名称。
   - name: route
     description: Intercept network requests matching a URL pattern. mode=abort blocks, mode=provide responds with status+body+contentType, mode=continue forwards. Returns a route id.
     descriptions:
-      zh: "拦截与 URL 模式匹配的网络请求。mode=abort 阻断，mode=provide 以 status+body+contentType 响应，mode=continue 放行。返回 route id。"
+      zh: 拦截与 URL 模式匹配的网络请求。mode=abort 阻断，mode=provide 以 status+body+contentType 响应，mode=continue 放行。返回 route id。
     input_schema:
       type: object
       properties:
-        url: { type: string }
-        mode: { type: string, enum: [abort, provide, continue] }
-        status: { type: integer }
-        body: { type: string }
-        contentType: { type: string }
+        url:
+          type: string
+          description: URL to navigate to, fetch, match, or scope the cookie to.
+          descriptions:
+            zh: 要访问、匹配或作为 Cookie 作用域的 URL。
+        mode:
+          type: string
+          enum: [abort, provide, continue]
+          description: Intercept mode — abort the request, provide a body, or continue.
+          descriptions:
+            zh: 拦截模式——abort 中断、provide 提供响应体、continue 放行。
+        status:
+          type: integer
+          description: HTTP status code to provide (valid with mode=provide).
+          descriptions:
+            zh: 提供响应时的 HTTP 状态码（配合 mode=provide）。
+        body:
+          type: string
+          description: Response body to provide (valid with mode=provide).
+          descriptions:
+            zh: 提供响应时的响应体（配合 mode=provide）。
+        contentType:
+          type: string
+          description: Content-Type for the provided body (default text/plain).
+          descriptions:
+            zh: 提供响应体的 Content-Type（默认 text/plain）。
       required: [url, mode]
   - name: unroute
     description: Remove a network intercept by route id.
     descriptions:
-      zh: "按 route id 移除网络拦截。"
+      zh: 按 route id 移除网络拦截。
     input_schema:
       type: object
       properties:
-        routeId: { type: string }
+        routeId:
+          type: string
+          description: id returned by the route interception.
+          descriptions:
+            zh: route 拦截返回的 id。
       required: [routeId]
   - name: console_logs
     description: Return captured browser console log entries for this session.
     descriptions:
-      zh: "返回本会话捕获的浏览器控制台日志项。"
+      zh: 返回本会话捕获的浏览器控制台日志项。
     input_schema:
       type: object
       properties: {}
   - name: emulate
     description: Override browser emulation settings (userAgent, timezone, geolocation).
     descriptions:
-      zh: "覆盖浏览器仿真设置（userAgent、时区、地理位置）。"
+      zh: 覆盖浏览器仿真设置（userAgent、时区、地理位置）。
     input_schema:
       type: object
       properties:
-        userAgent: { type: string }
-        timezone: { type: string }
-        latitude: { type: number }
-        longitude: { type: number }
+        userAgent:
+          type: string
+          description: Override the browser user agent.
+          descriptions:
+            zh: 覆盖浏览器 user agent。
+        timezone:
+          type: string
+          description: Override the timezone (IANA name, e.g. America/New_York).
+          descriptions:
+            zh: 覆盖时区（IANA 名，如 America/New_York）。
+        latitude:
+          type: number
+          description: Override the geolocation latitude.
+          descriptions:
+            zh: 覆盖地理位置纬度。
+        longitude:
+          type: number
+          description: Override the geolocation longitude.
+          descriptions:
+            zh: 覆盖地理位置经度。
   - name: add_init_script
     description: Add a script that runs on every subsequent navigation (before page scripts).
     descriptions:
-      zh: "添加一个在后续每次导航时（页面脚本之前）运行的脚本。"
+      zh: 添加一个在后续每次导航时（页面脚本之前）运行的脚本。
     input_schema:
       type: object
       properties:
-        script: { type: string }
+        script:
+          type: string
+          description: JavaScript to run on every navigation (before page scripts).
+          descriptions:
+            zh: 每次导航前运行的 JavaScript（在页面脚本之前执行）。
       required: [script]
