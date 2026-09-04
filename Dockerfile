@@ -2,7 +2,7 @@
 # wdbidi-extension: Go rewrite of webdriver-extension. Single static binary
 # driving a Selenium standalone node over WebDriver BiDi (abep id "webdriver").
 # Base images default to the in-cluster artifact registry.
-ARG REGISTRY=jj-lab.temp.svc.cluster.local
+ARG REGISTRY=docker.io
 FROM ${REGISTRY}/library/golang:1.26-alpine AS build
 ARG HTTP_PROXY=http://mihomo.develop.svc.cluster.local:7890
 ARG HTTPS_PROXY=http://mihomo.develop.svc.cluster.local:7890
