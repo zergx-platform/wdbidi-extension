@@ -83,7 +83,7 @@ func webfetch(rawURL, format string, timeoutSecs int) (map[string]any, error) {
 
 	contentType := resp.Header.Get("Content-Type")
 	mime := strings.ToLower(strings.TrimSpace(strings.SplitN(contentType, ";", 2)[0]))
-	base := map[string]any{"url": resp.Request.URL.String(), "contentType": contentType}
+	base := map[string]any{"url": resp.Request.URL.String(), "content-type": contentType}
 
 	if strings.HasPrefix(mime, "image/") {
 		base["format"] = "image"

@@ -63,7 +63,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"url": u}), Data: map[string]any{"url": u}}, nil
 			},
 		},
-		"navigate_back": {
+		"navigate-back": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				u, err := s.traverseHistory(sessionName, -1)
 				if err != nil {
@@ -72,7 +72,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"url": u}), Data: map[string]any{"url": u}}, nil
 			},
 		},
-		"navigate_forward": {
+		"navigate-forward": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				u, err := s.traverseHistory(sessionName, 1)
 				if err != nil {
@@ -120,7 +120,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 		"screenshot": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
-				fullPage := argBool(args, "fullPage", false)
+				fullPage := argBool(args, "full-page", false)
 				data, err := s.screenshotElement(sessionName, element, fullPage)
 				if err != nil {
 					return extension.ToolResultData{}, err
@@ -149,7 +149,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				case "middle":
 					button = 1
 				}
-				dbl := argBool(args, "doubleClick", false)
+				dbl := argBool(args, "double-click", false)
 				if err := s.clickAt(sessionName, element, button); err != nil {
 					return extension.ToolResultData{}, err
 				}
@@ -197,7 +197,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true}), Data: map[string]any{"ok": true}}, nil
 			},
 		},
-		"select_option": {
+		"select-option": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
 				values := argStringSlice(args, "values")
@@ -226,7 +226,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true}), Data: map[string]any{"ok": true}}, nil
 			},
 		},
-		"fill_form": {
+		"fill-form": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				fields := []struct{ Target, Value string }{}
 				if arr, ok := args["fields"].([]any); ok {
@@ -248,7 +248,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"filled": len(fields)}), Data: map[string]any{"filled": len(fields)}}, nil
 			},
 		},
-		"press_key": {
+		"press-key": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				key := argString(args, "key")
 				ctxid, err := s.ensureContext(sessionName)
@@ -266,8 +266,8 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 		},
 		"drag": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
-				start := argString(args, "startElement")
-				end := argString(args, "endElement")
+				start := argString(args, "start-element")
+				end := argString(args, "end-element")
 				ctxid, err := s.ensureContext(sessionName)
 				if err != nil {
 					return extension.ToolResultData{}, err
@@ -317,7 +317,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true}), Data: map[string]any{"ok": true}}, nil
 			},
 		},
-		"file_upload": {
+		"file-upload": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
 				files := argStringSlice(args, "paths")
@@ -365,7 +365,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"matches": matches, "count": len(matches)}), Data: map[string]any{"count": len(matches)}}, nil
 			},
 		},
-		"wait_for": {
+		"wait-for": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				if t := argInt(args, "time", 0); t > 0 {
 					time.Sleep(time.Duration(t) * time.Second)
@@ -401,7 +401,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{}, fmt.Errorf("wait_for timed out")
 			},
 		},
-		"expect_text": {
+		"expect-text": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				text := argString(args, "text")
 				if text == "" {
@@ -421,10 +421,10 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true, "text": text}), Data: map[string]any{"ok": true, "text": text}}, nil
 			},
 		},
-		"handle_dialog": {
+		"handle-dialog": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				accept := argBool(args, "accept", true)
-				promptText := argString(args, "promptText")
+				promptText := argString(args, "prompt-text")
 				// Wait for the dialog to open (userPromptOpened event) and then
 				// handle it — rather than firing handleUserPrompt blind.
 				handled, err := s.waitForPrompt(sessionName, accept, promptText, 30*time.Second)
@@ -452,7 +452,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				action := argString(args, "action")
 				if action == "" {
-					action = argString(args, "tabAction")
+					action = argString(args, "tab-action")
 				}
 				if action == "" {
 					action = "list"
@@ -518,7 +518,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				}
 			},
 		},
-		"network_requests": {
+		"network-requests": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				reqs := s.networkLog(sessionName)
 				return extension.ToolResultData{Content: jsonString(map[string]any{"requests": reqs}), Data: map[string]any{"requests": reqs}}, nil
@@ -545,7 +545,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"reloaded": true, "url": u}), Data: map[string]any{"url": u}}, nil
 			},
 		},
-		"print_pdf": {
+		"print-pdf": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				data, err := s.printPDF(sessionName)
 				if err != nil {
@@ -562,7 +562,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: ref, Data: map[string]any{"bytes": len(raw)}}, nil
 			},
 		},
-		"cookies_get": {
+		"cookies-get": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				cookies, err := s.getCookies(sessionName)
 				if err != nil {
@@ -571,7 +571,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"cookies": cookies}), Data: map[string]any{"cookies": cookies}}, nil
 			},
 		},
-		"cookies_set": {
+		"cookies-set": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				name := argString(args, "name")
 				value := argString(args, "value")
@@ -589,7 +589,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true}), Data: map[string]any{"ok": true}}, nil
 			},
 		},
-		"cookies_delete": {
+		"cookies-delete": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				name := argString(args, "name")
 				if err := s.deleteCookies(sessionName, name); err != nil {
@@ -616,7 +616,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				}
 				status := argInt(args, "status", 200)
 				body := argString(args, "body")
-				ct := argString(args, "contentType")
+				ct := argString(args, "content-type")
 				if ct == "" {
 					ct = "text/plain"
 				}
@@ -624,12 +624,12 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				if err != nil {
 					return extension.ToolResultData{}, err
 				}
-				return extension.ToolResultData{Content: jsonString(map[string]any{"routeId": rid}), Data: map[string]any{"routeId": rid}}, nil
+				return extension.ToolResultData{Content: jsonString(map[string]any{"route-id": rid}), Data: map[string]any{"route-id": rid}}, nil
 			},
 		},
 		"unroute": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
-				rid := argString(args, "routeId")
+				rid := argString(args, "route-id")
 				if rid == "" {
 					return extension.ToolResultData{}, fmt.Errorf("unroute requires routeId")
 				}
@@ -639,7 +639,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true}), Data: map[string]any{"ok": true}}, nil
 			},
 		},
-		"console_logs": {
+		"console-logs": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				entries := s.consoleLogs(sessionName)
 				return extension.ToolResultData{Content: jsonString(map[string]any{"logs": entries}), Data: map[string]any{"logs": entries}}, nil
@@ -647,7 +647,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 		},
 		"emulate": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
-				ua := argString(args, "userAgent")
+				ua := argString(args, "user-agent")
 				tz := argString(args, "timezone")
 				var lat, lon *float64
 				if v, ok := args["latitude"].(float64); ok {
@@ -662,7 +662,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true}), Data: map[string]any{"ok": true}}, nil
 			},
 		},
-		"add_init_script": {
+		"add-init-script": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				script := argString(args, "script")
 				if script == "" {

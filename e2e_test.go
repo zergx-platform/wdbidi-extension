@@ -41,7 +41,7 @@ func TestE2E(t *testing.T) {
 		return run("navigate", map[string]any{"url": "data:text/html;charset=utf-8," + enc(dyn)})
 	})
 	step("click(#late 延迟)", func() (string, error) { return run("click", map[string]any{"element": "#late"}) })
-	step("expect_text(ok)", func() (string, error) { return run("expect_text", map[string]any{"text": "ok"}) })
+	step("expect_text(ok)", func() (string, error) { return run("expect-text", map[string]any{"text": "ok"}) })
 
 	form := `<!DOCTYPE html><html><body><input id="n"><button id="b" onclick='document.getElementById("o").textContent="h:"+document.getElementById("n").value'>G</button><p id="o"></p></body></html>`
 	step("navigate(form)", func() (string, error) {
@@ -49,7 +49,7 @@ func TestE2E(t *testing.T) {
 	})
 	step("type", func() (string, error) { return run("type", map[string]any{"element": "#n", "text": "w"}) })
 	step("click(#b)", func() (string, error) { return run("click", map[string]any{"element": "#b"}) })
-	step("expect_text(h:w)", func() (string, error) { return run("expect_text", map[string]any{"text": "h:w"}) })
+	step("expect_text(h:w)", func() (string, error) { return run("expect-text", map[string]any{"text": "h:w"}) })
 
 	step("navigate(example.com)", func() (string, error) { return run("navigate", map[string]any{"url": "https://example.com"}) })
 	step("snapshot", func() (string, error) { return run("snapshot", map[string]any{}) })

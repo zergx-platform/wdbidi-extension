@@ -559,7 +559,7 @@ func (s *server) emulate(sessionName, userAgent, timezone string, lat, lon *floa
 	}
 	if userAgent != "" {
 		if _, err := s.bidiCall("emulation.setUserAgentOverride", map[string]any{
-			"userAgent": userAgent, "contexts": []string{ctx},
+			"user-agent": userAgent, "contexts": []string{ctx},
 		}); err != nil {
 			return err
 		}
