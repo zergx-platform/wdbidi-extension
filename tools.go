@@ -54,7 +54,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				url := argString(args, "url")
 				if url == "" {
-					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","url", "url")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","url")
 				}
 				u, err := s.navigate(sessionName, url)
 				if err != nil {
@@ -140,7 +140,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
 				if element == "" {
-					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element", "element")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element")
 				}
 				button := 0
 				switch argString(args, "button") {
@@ -165,7 +165,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
 				if element == "" {
-					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element", "element")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element")
 				}
 				ctxid, err := s.ensureContext(sessionName)
 				if err != nil {
@@ -188,7 +188,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				element := argString(args, "element")
 				text := argString(args, "text")
 				if element == "" || text == "" {
-					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q or %q argument", "缺少 %q 或 %q 参数","element", "text", "element", "text")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q or %q argument", "缺少 %q 或 %q 参数","element", "text")
 				}
 				submit := argBool(args, "submit", false)
 				if err := s.typeInto(sessionName, element, text, submit); err != nil {
@@ -202,7 +202,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				element := argString(args, "element")
 				values := argStringSlice(args, "values")
 				if element == "" {
-					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element", "element")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element")
 				}
 				sel := toSelector(element)
 				if _, err := s.waitActionable(sessionName, element, true); err != nil {
@@ -405,7 +405,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				text := argString(args, "text")
 				if text == "" {
-					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","text", "text")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","text")
 				}
 				// Playwright fly: verify_text_visible is an immediate assertion —
 				// no polling, no auto-wait. Report error when the text is not
@@ -416,7 +416,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				}
 				ok := strings.Contains(body, text)
 				if !ok {
-					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "text not found: %q", "未找到文本：%q",text, text)
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "text not found: %q", "未找到文本：%q",text)
 				}
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true, "text": text}), Data: map[string]any{"ok": true, "text": text}}, nil
 			},
