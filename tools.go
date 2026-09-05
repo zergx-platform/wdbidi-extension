@@ -54,7 +54,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				url := argString(args, "url")
 				if url == "" {
-					return extension.ToolResultData{}, fmt.Errorf("missing %q argument", "url")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","url", "url")
 				}
 				u, err := s.navigate(sessionName, url)
 				if err != nil {
@@ -140,7 +140,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
 				if element == "" {
-					return extension.ToolResultData{}, fmt.Errorf("missing %q argument", "element")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element", "element")
 				}
 				button := 0
 				switch argString(args, "button") {
@@ -165,7 +165,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
 				if element == "" {
-					return extension.ToolResultData{}, fmt.Errorf("missing %q argument", "element")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element", "element")
 				}
 				ctxid, err := s.ensureContext(sessionName)
 				if err != nil {
@@ -188,7 +188,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				element := argString(args, "element")
 				text := argString(args, "text")
 				if element == "" || text == "" {
-					return extension.ToolResultData{}, fmt.Errorf("missing %q or %q argument", "element", "text")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q or %q argument", "缺少 %q 或 %q 参数","element", "text", "element", "text")
 				}
 				submit := argBool(args, "submit", false)
 				if err := s.typeInto(sessionName, element, text, submit); err != nil {
@@ -202,7 +202,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				element := argString(args, "element")
 				values := argStringSlice(args, "values")
 				if element == "" {
-					return extension.ToolResultData{}, fmt.Errorf("missing %q argument", "element")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","element", "element")
 				}
 				sel := toSelector(element)
 				if _, err := s.waitActionable(sessionName, element, true); err != nil {
@@ -297,7 +297,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				element := argString(args, "element")
 				if element == "" {
-					return extension.ToolResultData{}, fmt.Errorf("drop requires element")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "drop requires element", "drop 需要 element")
 				}
 				files := argStringSlice(args, "paths")
 				data := map[string]string{}
@@ -309,7 +309,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 					}
 				}
 				if len(files) == 0 && len(data) == 0 {
-					return extension.ToolResultData{}, fmt.Errorf("drop requires paths or data")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "drop requires paths or data", "drop 需要 paths 或 data")
 				}
 				if err := s.dropData(sessionName, element, files, data); err != nil {
 					return extension.ToolResultData{}, err
@@ -374,7 +374,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				text := argString(args, "text")
 				regex := argString(args, "regex")
 				if text == "" && regex == "" {
-					return extension.ToolResultData{}, fmt.Errorf("wait_for requires time | text | regex")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "wait_for requires time | text | regex", "wait_for 需要 time/文本/正则")
 				}
 				var re *regexp.Regexp
 				if regex != "" && len(regex) <= 200 {
@@ -398,14 +398,14 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 					}
 					time.Sleep(200 * time.Millisecond)
 				}
-				return extension.ToolResultData{}, fmt.Errorf("wait_for timed out")
+				return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "wait_for timed out", "wait_for 超时")
 			},
 		},
 		"expect-text": {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				text := argString(args, "text")
 				if text == "" {
-					return extension.ToolResultData{}, fmt.Errorf("missing %q argument", "text")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "missing %q argument", "缺少 %q 参数","text", "text")
 				}
 				// Playwright fly: verify_text_visible is an immediate assertion —
 				// no polling, no auto-wait. Report error when the text is not
@@ -416,7 +416,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				}
 				ok := strings.Contains(body, text)
 				if !ok {
-					return extension.ToolResultData{}, fmt.Errorf("text not found: %q", text)
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "text not found: %q", "未找到文本：%q",text, text)
 				}
 				return extension.ToolResultData{Content: jsonString(map[string]any{"ok": true, "text": text}), Data: map[string]any{"ok": true, "text": text}}, nil
 			},
@@ -578,7 +578,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				domain := argString(args, "domain")
 				path := argString(args, "path")
 				if name == "" || domain == "" {
-					return extension.ToolResultData{}, fmt.Errorf("cookies_set requires name, value, domain")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "cookies_set requires name, value, domain", "cookies_set 需要 name、value、domain")
 				}
 				if path == "" {
 					path = "/"
@@ -603,7 +603,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 				url := argString(args, "url")
 				mode := argString(args, "mode")
 				if url == "" || mode == "" {
-					return extension.ToolResultData{}, fmt.Errorf("route requires url and mode")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "route requires url and mode", "route 需要 url 与 mode")
 				}
 				var kind routeKind
 				switch mode {
@@ -631,7 +631,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				rid := argString(args, "route-id")
 				if rid == "" {
-					return extension.ToolResultData{}, fmt.Errorf("unroute requires routeId")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "unroute requires routeId", "unroute 需要 routeId")
 				}
 				if err := s.removeRoute(rid); err != nil {
 					return extension.ToolResultData{}, err
@@ -666,7 +666,7 @@ func (s *server) handlers() map[string]extension.ToolSpec {
 			Execute: func(ctx context.Context, args map[string]any, callID, sessionName string) (extension.ToolResultData, error) {
 				script := argString(args, "script")
 				if script == "" {
-					return extension.ToolResultData{}, fmt.Errorf("add_init_script requires script")
+					return extension.ToolResultData{}, ef(ctx, s.ext, sessionName, "add_init_script requires script", "add_init_script 需要 script")
 				}
 				if err := s.addInitScript(sessionName, script); err != nil {
 					return extension.ToolResultData{}, err
